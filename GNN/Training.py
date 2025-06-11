@@ -45,8 +45,8 @@ if __name__ == "__main__":
     print(f"Total number of trainable parameters : {total_params}")
 
     print("Loading Data...")
-    af_dataset = Dataset(IAF_root,device=device)
-    data_loader = dgl.dataloading.GraphDataLoader(af_dataset, batch_size=8, shuffle=True)
+    iaf_dataset = Dataset(IAF_root,device=device)
+    data_loader = dgl.dataloading.GraphDataLoader(iaf_dataset, batch_size=8, shuffle=True)
 
     print("Start training...")
     model.train()
@@ -58,10 +58,9 @@ if __name__ == "__main__":
             node_feats = graph.ndata["feat"].to(device)
             edge_feats = graph.edata["is_uncertain"].to(device)
             label = graph.ndata["label"].to(device)
-            mask = graph.ndata["mask"].to(device)
-            graphe = graph.to(device)
+            mask = graph.ndata["mask"].to(device).bool()
             optimizer.zero_grad()  #réinitialisation des gradients avant la rétropropagation
-            node_out, edge_out = model(graphe, node_feats, edge_feats)
+            node_out, edge_out = model(graph, node_feats, edge_feats)
             predicted = (torch.sigmoid(node_out)) #transformation de node_out en valeurs entre 0 et 1
             predicted = predicted[mask]
             label = label[mask]
@@ -76,4 +75,3 @@ if __name__ == "__main__":
                 g['lr'] = 0.001
         print("Batchs :", i, "Epoch : ", epoch," Mean : " , statistics.fmean(tot_loss), " Median : ", statistics.median(tot_loss), "Sum loss : ", sum_tot_loss)
     torch.save(model.state_dict(), modelpath)
-    model.eval()
