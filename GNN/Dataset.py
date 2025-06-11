@@ -6,11 +6,6 @@ import torch
 import dgl
 import os
 
-IAF_root = "../Data/IAF_TrainSet"
-completions_root = "../Data/IAF_TrainSet/completions"
-label_root = "../Data/IAF_TrainSet/labels"
-features_root = "../Data/IAF_TrainSet/features"
-
 
 def CreateDGLGraphs(apxpath, device="cpu"):
     num_nodes = int(os.path.basename(apxpath).split("_")[1])
@@ -80,22 +75,26 @@ def GetLabels(num_nodes, labelpath, device="cpu"):
 
 
 class Dataset(DGLDataset):
-    def __init__(self,device="cpu"):
+    def __init__(self,IAF_root,device="cpu"):
+        self.IAF_root = IAF_root
+        self.completions_root = f"{self.IAF_root}/completions"
+        self.label_root = f"{self.IAF_root}/labels"
+        self.features_root = f"{self.IAF_root}/features"
         self.device = device
         super().__init__(name="Dataset")
 
     def process(self):
         self.graphs = []
-        os.makedirs(features_root, exist_ok=True)
-        files = [f for f in os.listdir(IAF_root) if f.endswith(".apx")]
+        os.makedirs(self.features_root, exist_ok=True)
+        files = [f for f in os.listdir(self.IAF_root) if f.endswith(".apx")]
         total = len(files)
         for index, file in enumerate(files):
             file = os.path.splitext(file)[0]
-            graph, num_nodes, certain_nodes, is_node_uncertain = CreateDGLGraphs(f"{IAF_root}/{file}.apx")
-            features_MAX = GetFeatures(num_nodes, certain_nodes, f"{completions_root}/{file}_MAX.apx", f"{features_root}/{file}_MAX.pt")
-            features_MIN = GetFeatures(num_nodes, certain_nodes, f"{completions_root}/{file}_MIN.apx", f"{features_root}/{file}_MIN.pt")
+            graph, num_nodes, certain_nodes, is_node_uncertain = CreateDGLGraphs(f"{self.IAF_root}/{file}.apx")
+            features_MAX = GetFeatures(num_nodes, certain_nodes, f"{self.completions_root}/{file}_MAX.apx", f"{self.features_root}/{file}_MAX.pt")
+            features_MIN = GetFeatures(num_nodes, certain_nodes, f"{self.completions_root}/{file}_MIN.apx", f"{self.features_root}/{file}_MIN.pt")
             features = torch.cat([is_node_uncertain.unsqueeze(1), features_MAX, features_MIN], dim=1)
-            label = GetLabels(num_nodes, f"{label_root}/{file}_ST.csv")
+            label = GetLabels(num_nodes, f"{self.label_root}/{file}_ST.csv")
             mask = ~torch.isnan(label).any(dim=1)  #noeuds dont tous les labels sont valides
             graph.ndata["feat"] = features
             graph.ndata["mask"] = mask

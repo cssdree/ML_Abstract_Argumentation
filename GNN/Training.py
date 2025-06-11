@@ -45,7 +45,7 @@ if __name__ == "__main__":
     print(f"Total number of trainable parameters : {total_params}")
 
     print("Loading Data...")
-    af_dataset = Dataset(device=device)
+    af_dataset = Dataset(IAF_root,device=device)
     data_loader = dgl.dataloading.GraphDataLoader(af_dataset, batch_size=8, shuffle=True)
 
     print("Start training...")

@@ -4,7 +4,8 @@ import itertools
 import random
 import os
 
-IAF_root = "IAF_TestSet"
+IAF_root = "IAF_TrainSet"
+#IAF_root = "IAF_TestSet"
 methods = {nx.erdos_renyi_graph:"ER", nx.watts_strogatz_graph:"WS", nx.barabasi_albert_graph:"BA"}
 nb_neighbors = 2  #number of neighbors with which each node is joined for watts strogatz
 p_bi = 0.2  #probability that an edge is bidirectional

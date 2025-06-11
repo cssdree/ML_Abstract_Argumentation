@@ -8,15 +8,15 @@ import sys
 import ast
 import os
 
-filepath = sys.argv[1]  #chemin du fichier sans extension
-file = os.path.basename(filepath)
+filepath = sys.argv[1]  #chemin du fichier
+filepath = os.path.splitext(filepath)[0]  #chemin du fichier sans extension
+file = os.path.basename(filepath)  #chemin du fichier sans extension et sans origine
 task = sys.argv[2]  #problème de décision
 argId = sys.argv[3]  #argument à évaluer
 
 device = "cpu"
-cache_root = f"cache"
-model_root = "GNN/model"
-modelpath = f"{model_root}/egat_f23_f1.pth"
+cache_root = "cache"
+modelpath = "GNN/model/egat_f23_f1.pth"
 
 
 def CreateCompletions(apxpath, completion):
