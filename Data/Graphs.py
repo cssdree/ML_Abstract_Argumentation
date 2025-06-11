@@ -32,6 +32,26 @@ def WriteApx(def_args, def_atts, inc_args, inc_atts, filepath):
     out.close()
 
 
+def CreateCompletions(def_args, def_atts, inc_args, inc_atts, filepath):
+    filepath = os.path.join(os.path.dirname(filepath),"completions",os.path.basename(filepath))
+    filepath_MAX = filepath.replace(".apx","_MAX.apx")
+    filepath_MIN = filepath.replace(".apx","_MIN.apx")
+    WriteApx(def_args+inc_args, def_atts+inc_atts, [], [], filepath_MAX)
+    def_atts_MIN = GetMINCompletionAttacks(def_atts, inc_args)
+    WriteApx(def_args, def_atts_MIN, [], [], filepath_MIN)
+
+
+def GetMINCompletionAttacks(def_atts, inc_args):
+    if len(inc_args) == 0:
+        return def_atts
+    def_atts_MIN = def_atts.copy()
+    for inc_arg in inc_args:
+        for att in def_atts:
+            if inc_arg in att and att in def_atts_MIN:
+                def_atts_MIN.remove(att)
+    return def_atts_MIN
+
+
 class Graphs:
     def __init__(self, method, nbn, var):
         self.method = method
@@ -107,22 +127,4 @@ class Graphs:
     def Export(self, p_inc, inc_type, def_args, def_atts, inc_args, inc_atts):
         filepath = self.CreateFilepath(p_inc, inc_type)
         WriteApx(def_args, def_atts, inc_args, inc_atts, filepath)
-        self.CreateCompletions(def_args, def_atts, inc_args, inc_atts, filepath)
-
-    def CreateCompletions(self, def_args, def_atts, inc_args, inc_atts, filepath):
-        filepath = os.path.join(os.path.dirname(filepath),"completions",os.path.basename(filepath))
-        filepath_MAX = filepath.replace(".apx","_MAX.apx")
-        filepath_MIN = filepath.replace(".apx","_MIN.apx")
-        WriteApx(def_args+inc_args, def_atts+inc_atts, [], [], filepath_MAX)
-        def_atts_MIN = self.GetMINCompletionAttacks(def_atts, inc_args)
-        WriteApx(def_args, def_atts_MIN, [], [], filepath_MIN)
-
-    def GetMINCompletionAttacks(self,def_atts, inc_args):
-        if len(inc_args) == 0:
-            return def_atts
-        def_atts_MIN = def_atts.copy()
-        for inc_arg in inc_args:
-            for att in def_atts:
-                if inc_arg in att and att in def_atts_MIN:
-                    def_atts_MIN.remove(att)
-        return def_atts_MIN
+        CreateCompletions(def_args, def_atts, inc_args, inc_atts, filepath)

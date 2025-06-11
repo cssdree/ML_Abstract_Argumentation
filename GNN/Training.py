@@ -1,5 +1,5 @@
 import torch.nn.functional as functional
-from Dataset import Dataset
+from GNN.Dataset import Dataset
 from dgl.nn import EGATConv
 import torch.nn as nn
 import statistics

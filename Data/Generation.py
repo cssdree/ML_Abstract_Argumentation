@@ -1,4 +1,4 @@
-from Graphs import Graphs
+from Data.Graphs import Graphs
 import networkx as nx
 import os
 
