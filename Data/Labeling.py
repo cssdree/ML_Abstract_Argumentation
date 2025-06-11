@@ -3,11 +3,11 @@ import subprocess
 import csv
 import os
 
+IAF_root = "IAF_TrainSet"
+labels_root = f"{IAF_root}/labels"
+taeydennae_root = "../taeydennae_linux_x86-64"
 decision_problems = ["PCA", "NCA", "PSA", "NSA"]
 semantics = ["ST"]
-IAF_root = "IAF_generated"
-taeydennae_root = "../taeydennae_linux_x86-64"
-labels_root = f"{IAF_root}/labels"
 graphs_results = {}  #dict that contains the acceptability of each arg for each decision problem
 
 

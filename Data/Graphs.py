@@ -1,16 +1,22 @@
 import networkx as nx
 import numpy as np
 import itertools
+import random
 import os
 
-seed = 20190905  #seed used for AAAI'20 paper
-np.random.seed(seed)
-
+IAF_root = "IAF_TrainSet"
 methods = {nx.erdos_renyi_graph:"ER", nx.watts_strogatz_graph:"WS", nx.barabasi_albert_graph:"BA"}
 nb_neighbors = 2  #number of neighbors with which each node is joined for watts strogatz
 p_bi = 0.2  #probability that an edge is bidirectional
 probs_inc = [0.05,0.1,0.15,0.2]  #probabilities that an argument is uncertain
 id_counter = itertools.count(start=0)  #unique id of each graph
+
+seed_train = 123
+seed_test = 456
+np.random.seed(seed_train)
+random.seed(seed_train)
+#np.random.seed(seed_test)
+#random.seed(seed_test)
 
 
 def WriteApx(def_args, def_atts, inc_args, inc_atts, filepath):
@@ -67,7 +73,7 @@ class Graphs:
     def CreateFilepath(self,p,inc):
         id = next(id_counter)
         filename = f"{methods[self.method]}_{self.nbn}_{self.var}_{p}_{inc}_{id}"
-        filepath = f"IAF_generated/{filename}.apx"
+        filepath = f"{IAF_root}/{filename}.apx"
         return filepath
 
     def MakeIncomplet(self):
