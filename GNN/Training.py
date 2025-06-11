@@ -7,7 +7,7 @@ import torch
 import dgl
 import os
 
-IAF_root = "../DataProject/IAF_generated"
+IAF_root = "../Data/IAF_TrainSet"
 model_root = "model"
 modelpath = f"{model_root}/egat_f23_f1.pth"
 device = "cpu"

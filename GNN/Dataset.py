@@ -6,14 +6,14 @@ import torch
 import dgl
 import os
 
-IAF_root = "../DataProject/IAF_generated"
-completions_root = "../DataProject/IAF_generated/completions"
-label_root = "../DataProject/IAF_generated/labels"
-features_root = "../DataProject/IAF_generated/features"
+IAF_root = "../Data/IAF_TrainSet"
+completions_root = "../Data/IAF_TrainSet/completions"
+label_root = "../Data/IAF_TrainSet/labels"
+features_root = "../Data/IAF_TrainSet/features"
 
 
 def CreateDGLGraphs(apxpath, device="cpu"):
-    num_nodes = int(apxpath.split("_")[1])
+    num_nodes = int(os.path.basename(apxpath).split("_")[1])
     attackers = []
     attacked = []
     certain_nodes = []

@@ -2,9 +2,9 @@ from Graphs import Graphs
 import networkx as nx
 import os
 
-IAF_root = "IAF_TrainSet"
+IAF_root = "IAF_TestSet"
 methods = [nx.erdos_renyi_graph, nx.watts_strogatz_graph, nx.barabasi_albert_graph]
-nb_graph = 5  #number of graph per settings (without the incomplet part)
+nb_graph = 2  #number of graph per settings (without the incomplet part)
 nb_nodes = [10,20,30]  #number of nodes
 probs_ER = [0.1,0.3,0.5]  #probabilities for erdos renyi
 probs_WS = [0.1,0.3,0.5,0.7,0.9]  #probabilities for watts strogatz
