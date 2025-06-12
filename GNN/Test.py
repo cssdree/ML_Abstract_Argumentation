@@ -1,10 +1,19 @@
-from GNN.Dataset import Dataset
+from GNN.iaf_egat_f23_f1 import CreateCompletions
+from GNN.Dataset import CreateDGLGraphs
+from Data.Labeling import CertainsArgs
+from GNN.Dataset import GetFeatures
 from GNN.Training import EGAT
+import subprocess
+import Dataset
 import torch
+import time
+import os
 
 device = "cpu"
+cache_root = "../cache"
 IAF_root = "../Data/IAF_TestSet"
 modelpath = "model/egat_f23_f1.pth"
+taeydennae_root = "../taeydennae_linux_x86-64"
 
 
 def Statistics(model, device="cpu"):
@@ -45,15 +54,69 @@ def Statistics(model, device="cpu"):
         total_correct_yes_no += (correct_yes[f"correct_{task_name}_yes"]+correct_no[f"correct_{task_name}_no"])
     print("TOTAL :",(total_correct_yes_no/total_actual_yes_no)*100,"% des prédictions sont correctes")
 
+"""
+def TimeWithGNN(model):
+    start_time = time.time()
+    for file in sorted(os.listdir(IAF_root))[:100]: #Traitement des 50 premiers fichiers apx
+        if file.endswith(".apx"):
+            for task in ["PCA", "NCA", "PSA", "NSA"]:
+                filename = os.path.splitext(file)[0]
+                certain_args = CertainsArgs(IAF_root, f"{filename}.apx")
+                for arg in certain_args:
+                    GetAcceptability(model, cache_root, f"{IAF_root}/{filename}",task,str(arg))
+    end_time = time.time()
+    return (end_time-start_time)
+"""
 
-def TimeWithGNN():
-    return None
+def TimeWithGNN(model):
+    start_time = time.time()
+    for i, file in enumerate(sorted(os.listdir(IAF_root))[:300], start=1):
+        if file.endswith(".apx"):
+            filename = os.path.splitext(file)[0]
+            certain_args = CertainsArgs(IAF_root, f"{filename}.apx")
+            filepath = f"{IAF_root}/{filename}"
+
+            # Création du graphe et des features UNE SEULE FOIS
+            graph, num_nodes, certain_nodes, is_node_uncertain = CreateDGLGraphs(f"{filepath}.apx")
+            features_MAX = GetFeatures(num_nodes, certain_nodes, CreateCompletions(f"{filepath}.apx", cache_root, "MAX"), f"{cache_root}/{filename}_MAX.pt")
+            features_MIN = GetFeatures(num_nodes, certain_nodes, CreateCompletions(f"{filepath}.apx", cache_root, "MIN"), f"{cache_root}/{filename}_MIN.pt")
+            node_feats = torch.cat([is_node_uncertain.unsqueeze(1), features_MAX, features_MIN], dim=1)
+
+            with torch.no_grad():
+                node_out, _ = model(graph, node_feats, graph.edata["is_uncertain"])
+                predicted = (torch.sigmoid(node_out) > 0.5).tolist()
+
+            # Boucle sur les prédictions déjà faites
+            for task_idx, task in enumerate(["PCA", "NCA", "PSA", "NSA"]):
+                for arg in certain_args:
+                    prediction = predicted[int(arg)][task_idx]
+                    # Tu peux stocker ou afficher ici
+                    _ = "YES" if prediction else "NO"
+    end_time = time.time()
+    return end_time - start_time
 
 
 def TimeWithTaeydennae():
-    return None
+    total_requests = 0
+    start_time = time.time()
+    for file in sorted(os.listdir(IAF_root))[:300]: #Traitement des 50 premiers fichiers apx
+        if file.endswith(".apx"):
+            for task in ["PCA", "NCA", "PSA", "NSA"]:
+                filename = os.path.splitext(file)[0]
+                certain_args = CertainsArgs(IAF_root, f"{filename}.apx")
+                for arg in certain_args:
+                    subprocess.run([taeydennae_root, "-p", f"{task}-ST", "-f", f"{IAF_root}/{filename}.apx", "-a", str(arg)], capture_output=True, text=True)
+                    total_requests += 1
+    end_time = time.time()
+    return (end_time-start_time), total_requests
 
 
+os.makedirs(cache_root, exist_ok=True)
 model = EGAT(23, 1, 6, 6, 4, 1, heads=[5, 3, 3]).to(device)
 model.load_state_dict(torch.load(modelpath, map_location=device))
-Statistics(model)
+#Statistics(model)
+time_GNN = TimeWithGNN(model)
+time_taeydennae, total_requests = TimeWithTaeydennae()
+print("Time with the GNN :", time_GNN)
+print("Time with taeydennae :", time_taeydennae)
+print(total_requests, "requests have been made")

@@ -87,7 +87,6 @@ class Dataset(DGLDataset):
         self.graphs = []
         os.makedirs(self.features_root, exist_ok=True)
         files = [f for f in os.listdir(self.IAF_root) if f.endswith(".apx")]
-        total = len(files)
         for index, file in enumerate(files):
             file = os.path.splitext(file)[0]
             graph, num_nodes, certain_nodes, is_node_uncertain = CreateDGLGraphs(f"{self.IAF_root}/{file}.apx")
