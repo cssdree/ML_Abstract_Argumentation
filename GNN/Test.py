@@ -8,10 +8,12 @@ modelpath = "model/egat_f23_f1.pth"
 
 
 def Statistics(model, device="cpu"):
-    total_actual_yes = 0
-    correct_yes_predictions = 0
-    total_actual_no = 0
-    correct_no_predictions = 0
+    actual_yes = {"actual_PCA_yes":0, "actual_NCA_yes":0, "actual_PSA_yes":0, "actual_NSA_yes":0}
+    actual_no = {"actual_PCA_no": 0, "actual_NCA_no": 0, "actual_PSA_no": 0,"actual_NSA_no": 0}
+    correct_yes = {"correct_PCA_yes":0, "correct_NCA_yes":0, "correct_PSA_yes":0, "correct_NSA_yes":0}
+    correct_no = {"correct_PCA_no":0, "correct_NCA_no":0, "correct_PSA_no":0, "correct_NSA_no":0}
+    total_actual_yes_no = 0
+    total_correct_yes_no = 0
     iaf_dataset = Dataset(IAF_root)
     model.eval()
     with torch.no_grad():
@@ -23,21 +25,30 @@ def Statistics(model, device="cpu"):
             node_out, edge_out = model(graph, node_feats, edge_feats)
             predicted = (torch.sigmoid(node_out[mask])>0.5).float().tolist()
             label = label[mask].tolist()
-            one_prediction_of_yes = sum(p == l == 1.0 for p, l in zip(predicted, label))  #marche pas car p et l sont des listes
-            one_prediction_of_no = sum(p == l == 0.0 for p, l in zip(predicted, label))  #marche pas car p et l sont des listes
-            correct_yes_predictions += one_prediction_of_yes
-            correct_no_predictions += one_prediction_of_no
-            actual_yes = sum(l == 1.0 for l in label)  #marche pas car l est une liste
-            actual_no = sum(l == 0.0 for l in label)  #marche pas car l est une liste
-            total_actual_yes += actual_yes
-            total_actual_no += actual_no
-    print("Pourcentage de prédictions correctes : ",(correct_yes_predictions+correct_no_predictions)/(total_actual_yes+total_actual_no)*100)
-    print("Pourcentage de YES corrects : ",(correct_yes_predictions/total_actual_yes)*100)
-    print("Pourcentage de NO corrects : ", (correct_no_predictions / total_actual_no)*100)
-    #DIFFERENCIER EN FONCTION DES PROBLEMES DE DECISION
+            for task_idx, task_name in enumerate(["PCA", "NCA", "PSA", "NSA"]):
+                predicted_task = [p[task_idx] for p in predicted]
+                label_task = [l[task_idx] for l in label]
+                one_actual_yes = sum(l == 1.0 for l in label_task)
+                one_actual_no = sum(l == 0.0 for l in label_task)
+                one_correct_yes = sum(p == l == 1.0 for p, l in zip(predicted_task, label_task))
+                one_correct_no = sum(p == l == 0.0 for p, l in zip(predicted_task, label_task))
+                actual_yes[f"actual_{task_name}_yes"] += one_actual_yes
+                actual_no[f"actual_{task_name}_no"] += one_actual_no
+                correct_yes[f"correct_{task_name}_yes"] += one_correct_yes
+                correct_no[f"correct_{task_name}_no"] += one_correct_no
+    print("Pourcentages de prédictions correctes :")
+    for task_name in ["PCA", "NCA", "PSA", "NSA"]:
+        print(f"Yes {task_name} :",(correct_yes[f"correct_{task_name}_yes"]/actual_yes[f"actual_{task_name}_yes"])*100,
+              f"No {task_name} :",(correct_no[f"correct_{task_name}_no"]/actual_no[f"actual_{task_name}_no"])*100,
+              f"Total {task_name} :",((correct_yes[f"correct_{task_name}_yes"]+correct_no[f"correct_{task_name}_no"])/(actual_yes[f"actual_{task_name}_yes"]+actual_no[f"actual_{task_name}_no"]))*100)
+        total_actual_yes_no += (actual_yes[f"actual_{task_name}_yes"]+actual_no[f"actual_{task_name}_no"])
+        total_correct_yes_no += (correct_yes[f"correct_{task_name}_yes"]+correct_no[f"correct_{task_name}_no"])
+    print("TOTAL :",(total_correct_yes_no/total_actual_yes_no)*100,"% des prédictions sont correctes")
+
 
 def TimeWithGNN():
     return None
+
 
 def TimeWithTaeydennae():
     return None

@@ -100,10 +100,6 @@ class Dataset(DGLDataset):
             graph.ndata["mask"] = mask
             graph.ndata["label"] = label
             self.graphs.append(graph)
-            #Affichage de la progression
-            if total > 0 and (index+1)%max(1,total//10)==0:
-                pct = int((index+1)/total*100)
-                print(f"{pct}% -> {index+1}/{total}")
 
     def __len__(self):
         return len(self.graphs)
