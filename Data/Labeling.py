@@ -3,12 +3,12 @@ import subprocess
 import csv
 import os
 
-IAF_root = "IAF_TrainSet"
-#IAF_root = "IAF_TestSet"
-labels_root = f"{IAF_root}/labels"
+#IAF_root = "IAF_TrainSet"
+IAF_root = "IAF_TestSet"
 taeydennae_root = "../taeydennae_linux_x86-64"
-decision_problems = ["PCA", "NCA", "PSA", "NSA"]
+
 semantics = ["ST"]
+decision_problems = ["PCA", "NCA", "PSA", "NSA"]
 graphs_results = {}  #dict that contains the acceptability of each arg for each decision problem
 
 
@@ -27,12 +27,12 @@ def Task(filename, sem, arg, problem):
         return filename, sem, arg, problem, 2
 
 
-def CertainsArgs(IAF_root, apxpath):
+def CertainsArgs(apxpath):
     """
     Return all the arguments of a file that are not uncertains
     """
     certain_args = set()
-    with open(f"{IAF_root}/{apxpath}", "r", encoding="utf-8") as f:
+    with open(apxpath, "r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if line.startswith('arg(') and line.endswith(').'):
@@ -46,12 +46,12 @@ if __name__ == "__main__":
         futures = []
         for sem in semantics:
             graphs_results[sem] = {}
-            for file in os.listdir(IAF_root):
-                if file.endswith(".apx"):
-                    filename = os.path.splitext(file)[0]
+            for apxfile in os.listdir(IAF_root):
+                if apxfile.endswith(".apx"):
+                    filename = os.path.splitext(apxfile)[0]
                     if filename not in graphs_results[sem]:
                         graphs_results[sem][filename] = {}
-                    certain_args = CertainsArgs(IAF_root, f"{filename}.apx")
+                    certain_args = CertainsArgs(f"{IAF_root}/{filename}.apx")
                     for arg in certain_args:
                         if arg not in graphs_results[sem][filename]:
                             graphs_results[sem][filename][arg] = {}
@@ -62,10 +62,10 @@ if __name__ == "__main__":
             graphs_results[sem][filename][arg][problem] = result
 
     #Building the csv files from "graphs_results" filled in
-    os.makedirs(labels_root, exist_ok=True)
+    os.makedirs(f"{IAF_root}/labels", exist_ok=True)
     for sem in graphs_results.keys():
         for file in graphs_results[sem].keys():
-            csvpath = f"{labels_root}/{file}_{sem}.csv"
+            csvpath = f"{IAF_root}/labels/{file}_{sem}.csv"
             with open(csvpath, "w", newline="", encoding="utf-8") as f:
                 f.write("#Argument-PCA-NCA-PSA-NSA\n")
                 for arg in graphs_results[sem][file].keys():
