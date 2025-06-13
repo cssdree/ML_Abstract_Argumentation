@@ -8,8 +8,7 @@ import dgl
 import os
 
 IAF_root = "../Data/IAF_TrainSet"
-model_root = "model"
-modelpath = f"{model_root}/egat_f23_f1.pth"
+modelpath = "model/egat_f23_f1.pth"
 device = "cpu"
 
 
@@ -37,7 +36,7 @@ class EGAT(nn.Module):
 
 
 if __name__ == "__main__":
-    os.makedirs(model_root, exist_ok=True)
+    os.makedirs("model", exist_ok=True)
     model = EGAT(23, 1, 6, 6, 4, 1, heads=[5, 3, 3]).to(device)
     loss = nn.BCELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.01)

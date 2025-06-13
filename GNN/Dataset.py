@@ -36,16 +36,16 @@ def CreateDGLGraphs(apxpath, device="cpu"):
     return g, num_nodes, certain_nodes, is_node_uncertain
 
 
-def GetFeatures(num_nodes, certain_nodes, apxpath, featurespath, device="cpu"):
-    if os.path.exists(featurespath):
-        raw_features = torch.load(featurespath, map_location="cpu").numpy()
+def GetFeatures(num_nodes, certain_nodes, apxpath, ptpath, device="cpu"):
+    if os.path.exists(ptpath):
+        raw_features = torch.load(ptpath, map_location="cpu").numpy()
         features = StandardScaler().fit_transform(raw_features)  #normalisation des features
         features = torch.tensor(features, dtype=torch.float32).to(device)
     else:
         raw_features = af_reader_py.compute_features(apxpath, 10000, 0.000001)
         if len(raw_features) != num_nodes:
             raw_features = FullFeatures(num_nodes, certain_nodes, raw_features)
-        torch.save(torch.tensor(raw_features, dtype=torch.float32), featurespath)
+        torch.save(torch.tensor(raw_features, dtype=torch.float32), ptpath)
         features = StandardScaler().fit_transform(raw_features)  #normalisation des features
         features = torch.tensor(features, dtype=torch.float32).to(device)
     return features
@@ -61,10 +61,10 @@ def FullFeatures(num_nodes, certain_nodes, features):
     return full_features
 
 
-def GetLabels(num_nodes, labelpath, device="cpu"):
+def GetLabels(num_nodes, csvpath, device="cpu"):
     label = [[numpy.nan]*4 for i in range(num_nodes)]
     #tableau des labels de taille num_nodes*4 pour les 4 problèmes de décision : PCA, NCA, PSA, NSA
-    with open(labelpath, "r", encoding="utf-8") as f:
+    with open(csvpath, "r", encoding="utf-8") as f:
         for line in f:
             if line.startswith("#"):
                 continue
@@ -75,7 +75,7 @@ def GetLabels(num_nodes, labelpath, device="cpu"):
 
 
 class Dataset(DGLDataset):
-    def __init__(self,IAF_root,device="cpu"):
+    def __init__(self, IAF_root, device="cpu"):
         self.IAF_root = IAF_root
         self.completions_root = f"{self.IAF_root}/completions"
         self.label_root = f"{self.IAF_root}/labels"
@@ -86,19 +86,19 @@ class Dataset(DGLDataset):
     def process(self):
         self.graphs = []
         os.makedirs(self.features_root, exist_ok=True)
-        files = [f for f in os.listdir(self.IAF_root) if f.endswith(".apx")]
-        for index, file in enumerate(files):
-            file = os.path.splitext(file)[0]
-            graph, num_nodes, certain_nodes, is_node_uncertain = CreateDGLGraphs(f"{self.IAF_root}/{file}.apx")
-            features_MAX = GetFeatures(num_nodes, certain_nodes, f"{self.completions_root}/{file}_MAX.apx", f"{self.features_root}/{file}_MAX.pt")
-            features_MIN = GetFeatures(num_nodes, certain_nodes, f"{self.completions_root}/{file}_MIN.apx", f"{self.features_root}/{file}_MIN.pt")
-            features = torch.cat([is_node_uncertain.unsqueeze(1), features_MAX, features_MIN], dim=1)
-            label = GetLabels(num_nodes, f"{self.label_root}/{file}_ST.csv")
-            mask = ~torch.isnan(label).any(dim=1)  #noeuds dont tous les labels sont valides
-            graph.ndata["feat"] = features
-            graph.ndata["mask"] = mask
-            graph.ndata["label"] = label
-            self.graphs.append(graph)
+        for apxfile in os.listdir(self.IAF_root):
+            if apxfile.endswith(".apx"):
+                filename = os.path.splitext(apxfile)[0]
+                graph, num_nodes, certain_nodes, is_node_uncertain = CreateDGLGraphs(f"{self.IAF_root}/{filename}.apx")
+                features_MAX = GetFeatures(num_nodes, certain_nodes, f"{self.completions_root}/{filename}_MAX.apx", f"{self.features_root}/{filename}_MAX.pt")
+                features_MIN = GetFeatures(num_nodes, certain_nodes, f"{self.completions_root}/{filename}_MIN.apx", f"{self.features_root}/{filename}_MIN.pt")
+                features = torch.cat([is_node_uncertain.unsqueeze(1), features_MAX, features_MIN], dim=1)
+                label = GetLabels(num_nodes, f"{self.label_root}/{filename}_ST.csv")
+                mask = ~torch.isnan(label).any(dim=1)  #noeuds dont tous les labels sont valides
+                graph.ndata["feat"] = features
+                graph.ndata["mask"] = mask
+                graph.ndata["label"] = label
+                self.graphs.append(graph)
 
     def __len__(self):
         return len(self.graphs)
