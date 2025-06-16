@@ -49,7 +49,7 @@ def Statistics(model, device="cpu"):
 
 def TimeWithGNN(model):
     start_time = time.time()
-    for apxfile in sorted(os.listdir(IAF_root))[:200]: #Traitement des 300 premiers fichiers apx
+    for apxfile in os.listdir(IAF_root):
         if apxfile.endswith(".apx"):
             filename = os.path.splitext(apxfile)[0]
             apxpath = f"{IAF_root}/{filename}.apx"
@@ -71,7 +71,7 @@ def TimeWithGNN(model):
 def TimeWithTaeydennae():
     total_requests = 0
     start_time = time.time()
-    for apxfile in sorted(os.listdir(IAF_root))[:200]: #Traitement des 300 premiers fichiers apx
+    for apxfile in os.listdir(IAF_root):
         if apxfile.endswith(".apx"):
             for task in ["PCA", "NCA", "PSA", "NSA"]:
                 filename = os.path.splitext(apxfile)[0]
@@ -88,8 +88,8 @@ if __name__ == "__main__":
     model = EGAT(23, 1, 6, 6, 4, 1, heads=[5, 3, 3]).to(device)
     model.load_state_dict(torch.load(modelpath, map_location=device))
     Statistics(model)
-    #time_GNN = TimeWithGNN(model)
-    #time_taeydennae, total_requests = TimeWithTaeydennae()
-    #print("Time with the GNN :", time_GNN)
-    #print("Time with taeydennae :", time_taeydennae)
-    #print(total_requests, "requests have been made")
+    time_GNN = TimeWithGNN(model)
+    time_taeydennae, total_requests = TimeWithTaeydennae()
+    print("Time with the GNN :", time_GNN)
+    print("Time with taeydennae :", time_taeydennae)
+    print(total_requests, "requests have been made")
