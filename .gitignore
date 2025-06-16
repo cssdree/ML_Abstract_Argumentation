@@ -6,7 +6,7 @@ Data/IAF_TestSet
 GNN/.venv
 GNN/cache
 GNN/model
-A-inc
-B-inc
+BigData/A-inc
+BigData/B-inc
 taeydennae_linux_x86-64
 af_reader_py-0.1.0-cp310-cp310-manylinux_2_34_x86_64.whl

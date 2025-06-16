@@ -51,13 +51,14 @@ def GetFeatures(num_nodes, certain_nodes, apxpath, ptpath, device="cpu"):
     return features
 
 
-def FullFeatures(num_nodes, certain_nodes, features):
+def FullFeatures(num_nodes, certain_nodes, raw_features):
     """
     Complète la liste de features de la completion MIN en rajoutant des 0 pour les noeuds manquants
     """
-    full_features = numpy.full((num_nodes, 11), 0)
+    full_features = [[0]*11 for i in range(num_nodes)]
     for index, node_id in enumerate(certain_nodes):
-        full_features[node_id] = features[index]
+        for j in range(11):
+            full_features[node_id][j] = raw_features[index][j]
     return full_features
 
 
