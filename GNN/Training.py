@@ -3,13 +3,21 @@ from GNN.Dataset import Dataset
 from dgl.nn import EGATConv
 import torch.nn as nn
 import statistics
+import random
 import torch
+import numpy
 import dgl
 import os
 
 IAF_root = "../Data/IAF_TrainSet"
 modelpath = "model/egat_f23_f1.pth"
 device = "cpu"
+
+seed = 666
+torch.manual_seed(seed)
+random.seed(seed)
+numpy.random.seed(seed)
+dgl.random.seed(seed)
 
 
 class EGAT(nn.Module):
@@ -45,6 +53,7 @@ if __name__ == "__main__":
 
     print("Loading Data...")
     iaf_dataset = Dataset(IAF_root,device=device)
+    generator = torch.Generator().manual_seed(seed)
     data_loader = dgl.dataloading.GraphDataLoader(iaf_dataset, batch_size=8, shuffle=True)
 
     print("Start training...")
@@ -52,7 +61,7 @@ if __name__ == "__main__":
     for epoch in range(400):
         tot_loss = []
         sum_tot_loss = 0
-        i = 0
+        batch_count = 0
         for graph in data_loader:
             node_feats = graph.ndata["feat"].to(device)
             edge_feats = graph.edata["is_uncertain"].to(device)
@@ -60,17 +69,16 @@ if __name__ == "__main__":
             mask = graph.ndata["mask"].to(device).bool()
             optimizer.zero_grad()  #réinitialisation des gradients avant la rétropropagation
             node_out, edge_out = model(graph, node_feats, edge_feats)
-            predicted = (torch.sigmoid(node_out)) #transformation de node_out en valeurs entre 0 et 1
-            predicted = predicted[mask]
+            predicted = (torch.sigmoid(node_out))[mask] #transformation de node_out en valeurs entre 0 et 1
             label = label[mask]
             loss_val = loss(predicted, label)
             loss_val.backward()
+            optimizer.step()
             tot_loss.append(loss_val.item())
             sum_tot_loss += loss_val.item()
-            i += 1
-            optimizer.step()
+            batch_count += 1
         if epoch == 8:
             for g in optimizer.param_groups:
                 g['lr'] = 0.001
-        print("Batchs :", i, "Epoch : ", epoch," Mean : " , statistics.fmean(tot_loss), " Median : ", statistics.median(tot_loss), "Sum loss : ", sum_tot_loss)
+        print("Batchs :", batch_count, "Epoch : ", epoch," Mean : " , statistics.fmean(tot_loss), " Median : ", statistics.median(tot_loss), "Sum loss : ", sum_tot_loss)
     torch.save(model.state_dict(), modelpath)
