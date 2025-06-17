@@ -14,7 +14,9 @@ def GetAcceptability(model, apxpath, task, argID):
     model.eval()
     filename = os.path.splitext(os.path.basename(apxpath))[0]
     graph, num_nodes, certain_nodes, nodes_id, is_node_uncertain, def_args, inc_args, def_atts, inc_atts = CreateDGLGraphs(apxpath)
-    CreateCompletions(def_args, def_atts, inc_args, inc_atts, f"cache/{filename}.apx")
+    len_def_atts_MIN = CreateCompletions(def_args, def_atts, inc_args, inc_atts, f"cache/{filename}.apx")
+    if len_def_atts_MIN == 0:
+        return "ERROR : Zero attack in the minimal completion"
     features_MAX = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MAX.apx")
     features_MIN = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MIN.apx")
     node_feats = torch.cat([is_node_uncertain.unsqueeze(1), features_MAX, features_MIN], dim=1)

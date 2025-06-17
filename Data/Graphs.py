@@ -38,17 +38,16 @@ def CreateCompletions(def_args, def_atts, inc_args, inc_atts, apxpath):
     WriteApx(def_args+inc_args, def_atts+inc_atts, [], [], filepath_MAX)
     def_atts_MIN = GetMINCompletionAttacks(def_atts, inc_args)
     WriteApx(def_args, def_atts_MIN, [], [], filepath_MIN)
+    return len(def_atts_MIN)
 
 
 def GetMINCompletionAttacks(def_atts, inc_args):
     if len(inc_args) == 0:
         return def_atts
-    def_atts_MIN = def_atts.copy()
-    for inc_arg in inc_args:
-        for att in def_atts:
-            if inc_arg in att and att in def_atts_MIN:
-                def_atts_MIN.remove(att)
-    return def_atts_MIN
+    def_atts_set = set(def_atts)
+    to_remove = {att for att in def_atts if any(inc_arg in att for inc_arg in inc_args)}
+    def_atts_MIN = def_atts_set-to_remove
+    return list(def_atts_MIN)
 
 
 class Graphs:
@@ -123,4 +122,4 @@ class Graphs:
     def Export(self, p_inc, inc_type, def_args, def_atts, inc_args, inc_atts):
         filename = self.CreateFilename(p_inc, inc_type)
         WriteApx(def_args, def_atts, inc_args, inc_atts, f"{IAF_root}/{filename}.apx")
-        CreateCompletions(def_args, def_atts, inc_args, inc_atts, f"{IAF_root}/completions/{filename}.apx")
+        len_def_atts_MIN = CreateCompletions(def_args, def_atts, inc_args, inc_atts, f"{IAF_root}/completions/{filename}.apx")
