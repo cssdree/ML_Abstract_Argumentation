@@ -53,17 +53,16 @@ def TimeWithGNN(model):
         if apxfile.endswith(".apx"):
             filename = os.path.splitext(apxfile)[0]
             apxpath = f"{IAF_root}/{filename}.apx"
-            certain_args = CertainsArgs(apxpath)
             graph, num_nodes, certain_nodes, is_node_uncertain = CreateDGLGraphs(apxpath)
             features_MAX = GetFeatures(num_nodes, certain_nodes, CreateCompletions(apxpath, "MAX"),f"cache/{filename}_MAX.pt")
             features_MIN = GetFeatures(num_nodes, certain_nodes, CreateCompletions(apxpath, "MIN"),f"cache/{filename}_MIN.pt")
             node_feats = torch.cat([is_node_uncertain.unsqueeze(1), features_MAX, features_MIN], dim=1)
             with torch.no_grad():
                 node_out, edge_out = model(graph, node_feats, graph.edata["is_uncertain"])
-                predicted = (torch.sigmoid(node_out) > 0.5).tolist()
-            for arg in certain_args:
+                predictions = (torch.sigmoid(node_out) > 0.5).tolist()
+            for arg in certain_nodes:
                 for task_idx, task_name in enumerate(["PCA", "NCA", "PSA", "NSA"]):
-                    prediction = predicted[int(arg)][task_idx]
+                    prediction = predictions[int(arg)][task_idx]
     end_time = time.time()
     return (end_time-start_time)
 

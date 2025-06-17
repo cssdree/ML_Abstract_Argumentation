@@ -1,10 +1,8 @@
 from sklearn.preprocessing import StandardScaler
-from dgl.data import DGLDataset
 import af_reader_py
 import itertools
 import torch
 import dgl
-import os
 
 
 def CreateDGLGraphs(apxpath, device="cpu"):
@@ -43,17 +41,11 @@ def CreateDGLGraphs(apxpath, device="cpu"):
 
 
 def GetFeatures(num_nodes, certain_nodes, apxpath, ptpath, device="cpu"):
-    if os.path.exists(ptpath):
-        raw_features = torch.load(ptpath, map_location="cpu").numpy()
-        features = StandardScaler().fit_transform(raw_features)  #normalisation des features
-        features = torch.tensor(features, dtype=torch.float32).to(device)
-    else:
-        raw_features = af_reader_py.compute_features(apxpath, 10000, 0.000001)
-        if len(raw_features) != num_nodes:
-            raw_features = FullFeatures(num_nodes, certain_nodes, raw_features)
-        torch.save(torch.tensor(raw_features, dtype=torch.float32), ptpath)
-        features = StandardScaler().fit_transform(raw_features)  #normalisation des features
-        features = torch.tensor(features, dtype=torch.float32).to(device)
+    raw_features = af_reader_py.compute_features(apxpath, 10000, 0.000001)
+    if len(raw_features) != num_nodes:
+        raw_features = FullFeatures(num_nodes, certain_nodes, raw_features)
+    features = StandardScaler().fit_transform(raw_features)  #normalisation des features
+    features = torch.tensor(features, dtype=torch.float32).to(device)
     return features
 
 
@@ -69,6 +61,17 @@ def FullFeatures(num_nodes, certain_nodes, raw_features):
 
 
 def GetNumNodes(apxpath):
+    num_nodes = 0
+    with open(apxpath, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if (line.startswith('arg(') and line.endswith(').')) or (line.startswith('?arg(') and line.endswith(').')):
+                num_nodes += 1
+            else:
+                return num_nodes
+
+"""
+def GetNumNodes(apxpath):
     apxfile = os.path.basename(apxpath)
     if apxfile.startswith(('BA','ER','WS','scc','grd','admbuster','stb','sembuster')):
         return int(apxfile.split("_")[1])+1
@@ -80,3 +83,4 @@ def GetNumNodes(apxpath):
                 if (line.startswith('arg(') and line.endswith(').')) or (line.startswith('?arg(') and line.endswith(').')):
                     num_nodes += 1
         return num_nodes
+"""
