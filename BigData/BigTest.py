@@ -1,6 +1,6 @@
-from BigData.Big_iaf_egat_f23_f1 import CreateCompletions
 from BigData.BigDataset import CreateDGLGraphs
 from BigData.BigDataset import GetFeatures
+from Data.Graphs import CreateCompletions
 from GNN.Training import EGAT
 import subprocess
 import torch
@@ -64,9 +64,10 @@ def TestGNN(model):
                 with open(argpath, "r", encoding="utf-8") as f:
                     arg = f.readline().strip()
                 start_time = time.time()
-                graph, num_nodes, certain_nodes, nodes_id, is_node_uncertain = CreateDGLGraphs(apxpath)
-                features_MAX = GetFeatures(num_nodes, certain_nodes, CreateCompletions(apxpath, "MAX"),f"cache/{filename}_MAX.pt")
-                features_MIN = GetFeatures(num_nodes, certain_nodes, CreateCompletions(apxpath, "MIN"),f"cache/{filename}_MIN.pt")
+                graph, num_nodes, certain_nodes, nodes_id, is_node_uncertain, def_args, inc_args, def_atts, inc_atts = CreateDGLGraphs(apxpath)
+                CreateCompletions(def_args, def_atts, inc_args, inc_atts, f"cache/{filename}.apx")
+                features_MAX = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MAX.apx")
+                features_MIN = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MIN.apx")
                 node_feats = torch.cat([is_node_uncertain.unsqueeze(1), features_MAX, features_MIN], dim=1)
                 with torch.no_grad():
                     node_out, edge_out = model(graph, node_feats, graph.edata["is_uncertain"])

@@ -1,4 +1,4 @@
-from GNN.iaf_egat_f23_f1 import CreateCompletions
+from Data.Graphs import CreateCompletions
 from GNN.Dataset import CreateDGLGraphs
 from Data.Labeling import CertainsArgs
 from GNN.Dataset import GetFeatures
@@ -54,6 +54,7 @@ def TimeWithGNN(model):
             filename = os.path.splitext(apxfile)[0]
             apxpath = f"{IAF_root}/{filename}.apx"
             graph, num_nodes, certain_nodes, is_node_uncertain = CreateDGLGraphs(apxpath)
+
             features_MAX = GetFeatures(num_nodes, certain_nodes, CreateCompletions(apxpath, "MAX"),f"cache/{filename}_MAX.pt")
             features_MIN = GetFeatures(num_nodes, certain_nodes, CreateCompletions(apxpath, "MIN"),f"cache/{filename}_MIN.pt")
             node_feats = torch.cat([is_node_uncertain.unsqueeze(1), features_MAX, features_MIN], dim=1)

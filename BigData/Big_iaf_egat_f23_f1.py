@@ -1,7 +1,6 @@
-from Data.Graphs import GetMINCompletionAttacks
 from BigData.BigDataset import CreateDGLGraphs
 from BigData.BigDataset import GetFeatures
-from Data.Graphs import WriteApx
+from Data.Graphs import CreateCompletions
 from GNN.Training import EGAT
 import torch
 import sys
@@ -11,39 +10,13 @@ modelpath = "GNN/model/egat_f23_f1.pth"
 device = "cpu"
 
 
-def CreateCompletions(apxpath, completion):
-    inc_args = []
-    inc_atts = []
-    def_args = []
-    def_atts = []
-    with open(apxpath, "r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if line.startswith('arg(') and line.endswith(').'):
-                def_args.append(str(line[4:-2]))
-            elif line.startswith('?arg(') and line.endswith(').'):
-                inc_args.append(str(line[5:-2]))
-            elif line.startswith('att(') and line.endswith(').'):
-                def_atts.append(tuple([str(line[4:-2].split(",")[0]),str(line[4:-2].split(",")[1])]))
-            elif line.startswith('?att(') and line.endswith(').'):
-                inc_atts.append(tuple([str(line[5:-2].split(",")[0]),str(line[5:-2].split(",")[1])]))
-    if completion == "MAX":
-        filename = os.path.basename(apxpath).replace(".apx", "_MAX")
-        filepath = f"cache/{filename}.apx"
-        WriteApx(def_args + inc_args, def_atts + inc_atts, [], [], filepath)
-    else:
-        filename = os.path.basename(apxpath).replace(".apx", "_MIN")
-        filepath = f"cache/{filename}.apx"
-        WriteApx(def_args, GetMINCompletionAttacks(def_atts, inc_args), [], [], filepath)
-    return filepath
-
-
 def GetAcceptability(model, apxpath, task, argID):
     model.eval()
     filename = os.path.splitext(os.path.basename(apxpath))[0]
-    graph, num_nodes, certain_nodes, nodes_id, is_node_uncertain = CreateDGLGraphs(apxpath)
-    features_MAX = GetFeatures(num_nodes, certain_nodes, CreateCompletions(apxpath, "MAX"),f"cache/{filename}_MAX.pt")
-    features_MIN = GetFeatures(num_nodes, certain_nodes, CreateCompletions(apxpath, "MIN"),f"cache/{filename}_MIN.pt")
+    graph, num_nodes, certain_nodes, nodes_id, is_node_uncertain, def_args, inc_args, def_atts, inc_atts = CreateDGLGraphs(apxpath)
+    CreateCompletions(def_args, def_atts, inc_args, inc_atts, f"cache/{filename}.apx")
+    features_MAX = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MAX.apx")
+    features_MIN = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MIN.apx")
     node_feats = torch.cat([is_node_uncertain.unsqueeze(1), features_MAX, features_MIN], dim=1)
     with torch.no_grad():
         node_out, edge_out = model(graph, node_feats, graph.edata["is_uncertain"])

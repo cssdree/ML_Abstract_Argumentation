@@ -7,29 +7,37 @@ import dgl
 
 def CreateDGLGraphs(apxpath, device="cpu"):
     num_nodes = GetNumNodes(apxpath)
-    id_counter = itertools.count(start=0)
     nodes_id = {}
     attackers = []
     attacked = []
     certain_nodes = []
     is_node_uncertain = [0]*num_nodes
     is_edge_uncertain = []
+    def_args = []
+    inc_args = []
+    def_atts = []
+    inc_atts = []
+    id_counter = itertools.count(start=0)
     with open(apxpath, "r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if line.startswith('arg(') and line.endswith(').'):
+                def_args.append(str(line[4:-2]))
                 id = next(id_counter)
                 nodes_id[str(line[4:-2])] = id
                 certain_nodes.append(id)
             elif line.startswith('?arg(') and line.endswith(').'):
+                inc_args.append(str(line[5:-2]))
                 id = next(id_counter)
                 nodes_id[str(line[5:-2])] = id
                 is_node_uncertain[id] = 1
             elif line.startswith('att(') and line.endswith(').'):
+                def_atts.append(tuple([str(line[4:-2].split(",")[0]), str(line[4:-2].split(",")[1])]))
                 attackers.append(nodes_id[str(line[4:-2].split(",")[0])])
                 attacked.append(nodes_id[str(line[4:-2].split(",")[1])])
                 is_edge_uncertain.append(0)
             elif line.startswith('?att(') and line.endswith(').'):
+                inc_atts.append(tuple([str(line[5:-2].split(",")[0]), str(line[5:-2].split(",")[1])]))
                 attackers.append(nodes_id[str(line[5:-2].split(",")[0])])
                 attacked.append(nodes_id[str(line[5:-2].split(",")[1])])
                 is_edge_uncertain.append(1)
@@ -37,10 +45,10 @@ def CreateDGLGraphs(apxpath, device="cpu"):
         g = dgl.graph((torch.tensor(attackers), torch.tensor(attacked)), num_nodes=num_nodes).to(device)
         g = dgl.add_self_loop(g)
         g.edata["is_uncertain"] = torch.tensor(is_edge_uncertain+[0]*num_nodes, dtype=torch.float32).unsqueeze(1)  #rajout des self loop
-    return g, num_nodes, certain_nodes, nodes_id, is_node_uncertain
+    return g, num_nodes, certain_nodes, nodes_id, is_node_uncertain, def_args, inc_args, def_atts, inc_atts
 
 
-def GetFeatures(num_nodes, certain_nodes, apxpath, ptpath, device="cpu"):
+def GetFeatures(num_nodes, certain_nodes, apxpath, device="cpu"):
     raw_features = af_reader_py.compute_features(apxpath, 10000, 0.000001)
     if len(raw_features) != num_nodes:
         raw_features = FullFeatures(num_nodes, certain_nodes, raw_features)
@@ -69,18 +77,3 @@ def GetNumNodes(apxpath):
                 num_nodes += 1
             else:
                 return num_nodes
-
-"""
-def GetNumNodes(apxpath):
-    apxfile = os.path.basename(apxpath)
-    if apxfile.startswith(('BA','ER','WS','scc','grd','admbuster','stb','sembuster')):
-        return int(apxfile.split("_")[1])+1
-    else :
-        num_nodes = 0
-        with open(apxpath, "r", encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if (line.startswith('arg(') and line.endswith(').')) or (line.startswith('?arg(') and line.endswith(').')):
-                    num_nodes += 1
-        return num_nodes
-"""
