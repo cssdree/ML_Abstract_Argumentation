@@ -3,6 +3,7 @@ import af_reader_py
 import itertools
 import torch
 import dgl
+import re
 
 
 def CreateDGLGraphs(apxpath, device="cpu"):
@@ -18,29 +19,39 @@ def CreateDGLGraphs(apxpath, device="cpu"):
     def_atts = []
     inc_atts = []
     id_counter = itertools.count(start=0)
+    pattern = re.compile(r'^(\?)?(arg|att)\((.*?)\).$')
     with open(apxpath, "r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
-            if line.startswith('arg(') and line.endswith(').'):
-                def_args.append(str(line[4:-2]))
-                id = next(id_counter)
-                nodes_id[str(line[4:-2])] = id
-                certain_nodes.append(id)
-            elif line.startswith('?arg(') and line.endswith(').'):
-                inc_args.append(str(line[5:-2]))
-                id = next(id_counter)
-                nodes_id[str(line[5:-2])] = id
-                is_node_uncertain[id] = 1
-            elif line.startswith('att(') and line.endswith(').'):
-                def_atts.append(tuple([str(line[4:-2].split(",")[0]), str(line[4:-2].split(",")[1])]))
-                attackers.append(nodes_id[str(line[4:-2].split(",")[0])])
-                attacked.append(nodes_id[str(line[4:-2].split(",")[1])])
-                is_edge_uncertain.append(0)
-            elif line.startswith('?att(') and line.endswith(').'):
-                inc_atts.append(tuple([str(line[5:-2].split(",")[0]), str(line[5:-2].split(",")[1])]))
-                attackers.append(nodes_id[str(line[5:-2].split(",")[0])])
-                attacked.append(nodes_id[str(line[5:-2].split(",")[1])])
-                is_edge_uncertain.append(1)
+            match = pattern.match(line)
+            if not match:
+                continue
+            is_uncertain = bool(match.group(1))
+            statement = match.group(2)
+            content = str(match.group(3))
+            if statement == "arg":
+                if is_uncertain:
+                    inc_args.append(content)
+                    id = next(id_counter)
+                    nodes_id[content] = id
+                    is_node_uncertain[id] = 1
+                else:
+                    def_args.append(content)
+                    id = next(id_counter)
+                    nodes_id[content] = id
+                    certain_nodes.append(id)
+            else:
+                src, tgt = content.split(',')
+                if is_uncertain:
+                    inc_atts.append(tuple([src, tgt]))
+                    attackers.append(nodes_id[src])
+                    attacked.append(nodes_id[tgt])
+                    is_edge_uncertain.append(1)
+                else:
+                    def_atts.append(tuple([src, tgt]))
+                    attackers.append(nodes_id[src])
+                    attacked.append(nodes_id[tgt])
+                    is_edge_uncertain.append(0)
         is_node_uncertain = torch.tensor(is_node_uncertain, dtype=torch.float32).to(device)
         g = dgl.graph((torch.tensor(attackers), torch.tensor(attacked)), num_nodes=num_nodes).to(device)
         g = dgl.add_self_loop(g)
@@ -50,9 +61,6 @@ def CreateDGLGraphs(apxpath, device="cpu"):
 
 def GetFeatures(num_nodes, certain_nodes, apxpath, device="cpu"):
     raw_features = af_reader_py.compute_features(apxpath, 10000, 0.000001)
-    if raw_features == None:
-        print(f"ERROR : GetFeatures() failed for {apxpath}")
-        return raw_features
     if len(raw_features) != num_nodes:
         raw_features = FullFeatures(num_nodes, certain_nodes, raw_features)
     features = StandardScaler().fit_transform(raw_features)  #normalisation des features
@@ -76,7 +84,7 @@ def GetNumNodes(apxpath):
     with open(apxpath, "r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
-            if (line.startswith('arg(') and line.endswith(').')) or (line.startswith('?arg(') and line.endswith(').')):
+            if (line.startswith('arg(')) or (line.startswith('?arg(')):
                 num_nodes += 1
             else:
                 return num_nodes

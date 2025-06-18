@@ -45,7 +45,8 @@ def GetMINCompletionAttacks(def_atts, inc_args):
     if len(inc_args) == 0:
         return def_atts
     def_atts_set = set(def_atts)
-    to_remove = {att for att in def_atts if any(inc_arg in att for inc_arg in inc_args)}
+    inc_args_set = set(inc_args)
+    to_remove = {(arg1, arg2) for arg1, arg2 in def_atts if arg1 in inc_args_set or arg2 in inc_args_set}
     def_atts_MIN = def_atts_set-to_remove
     return list(def_atts_MIN)
 

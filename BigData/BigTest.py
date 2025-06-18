@@ -52,17 +52,9 @@ def TestTaeydennae():
                         f.write(f"{predictions_time}\n")
 
 
-class TimeoutException(Exception):
-    pass
-
-def timeout_handler(signum, frame):
-    raise TimeoutException("CreateCompletions() timed out after 10 seconds.")
-
-
 def TestGNN(model):
     os.makedirs("cache", exist_ok=True)
     os.makedirs(f"{IAF_root}/GNN_labels", exist_ok=True)
-    os.makedirs(f"{IAF_root}/GNN_labels/timeouts", exist_ok=True)
     signal.signal(signal.SIGALRM, timeout_handler)
     for apxfile in os.listdir(IAF_root):
         if apxfile.endswith(".apx"):
@@ -70,27 +62,18 @@ def TestGNN(model):
             apxpath = f"{IAF_root}/{filename}.apx"
             argpath = f"{IAF_root}/{filename}.arg"
             labelpath = f"{IAF_root}/GNN_labels/{filename}_ST.txt"
-            timeoutpath = f"{IAF_root}/GNN_labels/timeouts/{filename}_timeout.txt"
-            if os.path.exists(f"{IAF_root}/taeydennae_labels/{filename}_ST.txt") and not os.path.exists(f"{IAF_root}/GNN_labels/{filename}_ST.txt"):
+            if os.path.exists(f"{IAF_root}/taeydennae_labels/{filename}_ST.txt"):
                 print(filename)
                 with open(argpath, "r", encoding="utf-8") as f:
                     arg = f.readline().strip()
                 start_time = time.time()
                 graph, num_nodes, certain_nodes, nodes_id, is_node_uncertain, def_args, inc_args, def_atts, inc_atts = CreateDGLGraphs(apxpath)
-                try:
-                    signal.alarm(10)
-                    len_def_atts_MIN = CreateCompletions(def_args, def_atts, inc_args, inc_atts,f"cache/{filename}.apx")
-                    signal.alarm(0)
-                except TimeoutException:
-                    open(timeoutpath, "w").close()
-                    continue
+                len_def_atts_MIN = CreateCompletions(def_args, def_atts, inc_args, inc_atts,f"cache/{filename}.apx")
                 if len_def_atts_MIN == 0:
                     print(f"ERROR : Zero attack in the minimal completion for {filename}")
                     continue
                 features_MAX = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MAX.apx")
                 features_MIN = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MIN.apx")
-                if features_MIN == None or features_MAX == None:
-                    continue
                 node_feats = torch.cat([is_node_uncertain.unsqueeze(1), features_MAX, features_MIN], dim=1)
                 with torch.no_grad():
                     node_out, edge_out = model(graph, node_feats, graph.edata["is_uncertain"])
