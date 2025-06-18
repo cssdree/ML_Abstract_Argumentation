@@ -15,15 +15,15 @@ device = "cpu"
 
 
 def TestTaeydennae():
-    os.makedirs(f"{IAF_root}/timeouts", exist_ok=True)
     os.makedirs(f"{IAF_root}/taeydennae_labels", exist_ok=True)
+    os.makedirs(f"{IAF_root}/timeouts/taeydennae_labels", exist_ok=True)
     for apxfile in os.listdir(IAF_root):
         if apxfile.endswith(".apx"):
             filename = os.path.splitext(apxfile)[0]
             apxpath = f"{IAF_root}/{filename}.apx"
             argpath = f"{IAF_root}/{filename}.arg"
             labelpath = f"{IAF_root}/taeydennae_labels/{filename}_ST.txt"
-            timeoutpath = f"{IAF_root}/timeouts/{filename}_timeout.txt"
+            timeoutpath = f"{IAF_root}/taeydennae_labels/timeouts/{filename}_timeout.txt"
             if not os.path.exists(labelpath):
                 predictions = []
                 timeout_occurred = False
@@ -62,6 +62,7 @@ def timeout_handler(signum, frame):
 def TestGNN(model):
     os.makedirs("cache", exist_ok=True)
     os.makedirs(f"{IAF_root}/GNN_labels", exist_ok=True)
+    os.makedirs(f"{IAF_root}/GNN_labels/timeouts", exist_ok=True)
     signal.signal(signal.SIGALRM, timeout_handler)
     for apxfile in os.listdir(IAF_root):
         if apxfile.endswith(".apx"):
@@ -69,7 +70,9 @@ def TestGNN(model):
             apxpath = f"{IAF_root}/{filename}.apx"
             argpath = f"{IAF_root}/{filename}.arg"
             labelpath = f"{IAF_root}/GNN_labels/{filename}_ST.txt"
-            if os.path.exists(f"{IAF_root}/taeydennae_labels/{filename}_ST.txt"):
+            timeoutpath = f"{IAF_root}/GNN_labels/timeouts/{filename}_timeout.txt"
+            if os.path.exists(f"{IAF_root}/taeydennae_labels/{filename}_ST.txt") and not os.path.exists(f"{IAF_root}/GNN_labels/{filename}_ST.txt"):
+                print(filename)
                 with open(argpath, "r", encoding="utf-8") as f:
                     arg = f.readline().strip()
                 start_time = time.time()
@@ -79,13 +82,15 @@ def TestGNN(model):
                     len_def_atts_MIN = CreateCompletions(def_args, def_atts, inc_args, inc_atts,f"cache/{filename}.apx")
                     signal.alarm(0)
                 except TimeoutException:
-                    print(f"TIMEOUT : CreateCompletions too long for {filename}")
+                    open(timeoutpath, "w").close()
                     continue
                 if len_def_atts_MIN == 0:
-                    print("ERROR : Zero attack in the minimal completion")
+                    print(f"ERROR : Zero attack in the minimal completion for {filename}")
                     continue
                 features_MAX = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MAX.apx")
                 features_MIN = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MIN.apx")
+                if features_MIN == None or features_MAX == None:
+                    continue
                 node_feats = torch.cat([is_node_uncertain.unsqueeze(1), features_MAX, features_MIN], dim=1)
                 with torch.no_grad():
                     node_out, edge_out = model(graph, node_feats, graph.edata["is_uncertain"])

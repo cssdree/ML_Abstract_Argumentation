@@ -50,6 +50,9 @@ def CreateDGLGraphs(apxpath, device="cpu"):
 
 def GetFeatures(num_nodes, certain_nodes, apxpath, device="cpu"):
     raw_features = af_reader_py.compute_features(apxpath, 10000, 0.000001)
+    if raw_features == None:
+        print(f"ERROR : GetFeatures() failed for {apxpath}")
+        return raw_features
     if len(raw_features) != num_nodes:
         raw_features = FullFeatures(num_nodes, certain_nodes, raw_features)
     features = StandardScaler().fit_transform(raw_features)  #normalisation des features
