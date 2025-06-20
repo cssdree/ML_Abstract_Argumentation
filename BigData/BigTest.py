@@ -9,15 +9,15 @@ import time
 import ast
 import os
 
-IAF_root = "A-inc"
+IAF_roots = ["A-inc", "B-inc"]
 modelpath = "../GNN/model/egat_f23_f1.pth"
 taeydennae_root = "../taeydennae_linux_x86-64"
 device = "cpu"
 
 
-def TestTaeydennae():
+def TestTaeydennae(IAF_root="B-inc"):
     os.makedirs(f"{IAF_root}/taeydennae_labels", exist_ok=True)
-    os.makedirs(f"{IAF_root}/timeouts", exist_ok=True)
+    os.makedirs(f"{IAF_root}/taeydennae_labels/timeouts", exist_ok=True)
     for apxfile in os.listdir(IAF_root):
         if apxfile.endswith(".apx"):
             filename = os.path.splitext(apxfile)[0]
@@ -53,7 +53,7 @@ def TestTaeydennae():
                         f.write(f"{predictions_time}\n")
 
 
-def TestGNN(model):
+def TestGNN(model, IAF_root="B-inc"):
     os.makedirs("cache", exist_ok=True)
     os.makedirs(f"{IAF_root}/GNN_labels", exist_ok=True)
     os.makedirs(f"{IAF_root}/GNN_labels/crashs", exist_ok=True)
@@ -72,7 +72,7 @@ def TestGNN(model):
                 graph, num_nodes, certain_nodes, nodes_id, is_node_uncertain, def_args, inc_args, def_atts, inc_atts = CreateDGLGraphs(apxpath)
                 len_def_atts_MIN = CreateCompletions(def_args, def_atts, inc_args, inc_atts,f"cache/{filename}.apx")
                 if len_def_atts_MIN == 0:
-                    print(f"ERROR : Zero attack in the minimal completion : {filename}")
+                    open(f"{IAF_root}/errors/{filename}", "w").close()
                     continue
                 features_MAX = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MAX.apx")
                 features_MIN = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MIN.apx")
@@ -97,46 +97,48 @@ def Statistics():
     GNN_time = 0
     taeydennae_median = []
     GNN_median = []
-    nb_files = 0
-    for txtfile in os.listdir(f"{IAF_root}/GNN_labels/"):
-        if txtfile.endswith(".txt"):
-            nb_files += 1
-            filename = txtfile.replace("_ST.txt","")
-            if os.path.exists(f"{IAF_root}/taeydennae_labels/timeouts/{filename}_timeout.txt"):
-                taeydennae_prediction_time = 20
-                taeydennae_median.append(taeydennae_prediction_time)
-                with open(f"{IAF_root}/GNN_labels/{filename}_ST.txt", "r", encoding="utf-8") as f:
-                    GNN_prediction = ast.literal_eval(f.readline().strip())
-                    GNN_prediction_time = float(f.readline().strip())
-                    GNN_median.append(GNN_prediction_time)
-            else :
-                with open(f"{IAF_root}/taeydennae_labels/{filename}_ST.txt", "r", encoding="utf-8") as f:
-                    taeydennae_prediction = ast.literal_eval(f.readline().strip())
-                    taeydennae_prediction_time = float(f.readline().strip())
+    nb_graphs = 0
+    for IAF_root in IAF_roots:
+        for txtfile in os.listdir(f"{IAF_root}/GNN_labels/"):
+            if txtfile.endswith(".txt"):
+                nb_graphs += 1
+                filename = txtfile.replace("_ST.txt","")
+                if os.path.exists(f"{IAF_root}/taeydennae_labels/timeouts/{filename}_timeout.txt"):
+                    taeydennae_prediction_time = 20
                     taeydennae_median.append(taeydennae_prediction_time)
-                with open(f"{IAF_root}/GNN_labels/{filename}_ST.txt", "r", encoding="utf-8") as f:
-                    GNN_prediction = ast.literal_eval(f.readline().strip())
-                    GNN_prediction_time = float(f.readline().strip())
-                    GNN_median.append(GNN_prediction_time)
-                for gnn_val, taey_val in zip(GNN_prediction, taeydennae_prediction):
-                    if gnn_val == taey_val == 1:
-                        VP += 1
-                    elif gnn_val == taey_val == 0:
-                        VN += 1
-                    elif gnn_val == 1 and taey_val == 0:
-                        FP += 1
-                    elif gnn_val == 0 and taey_val == 1:
-                        FN += 1
-        taeydennae_time += taeydennae_prediction_time
-        GNN_time += GNN_prediction_time
+                    with open(f"{IAF_root}/GNN_labels/{filename}_ST.txt", "r", encoding="utf-8") as f:
+                        GNN_prediction = ast.literal_eval(f.readline().strip())
+                        GNN_prediction_time = float(f.readline().strip())
+                        GNN_median.append(GNN_prediction_time)
+                else :
+                    with open(f"{IAF_root}/taeydennae_labels/{filename}_ST.txt", "r", encoding="utf-8") as f:
+                        taeydennae_prediction = ast.literal_eval(f.readline().strip())
+                        taeydennae_prediction_time = float(f.readline().strip())
+                        taeydennae_median.append(taeydennae_prediction_time)
+                    with open(f"{IAF_root}/GNN_labels/{filename}_ST.txt", "r", encoding="utf-8") as f:
+                        GNN_prediction = ast.literal_eval(f.readline().strip())
+                        GNN_prediction_time = float(f.readline().strip())
+                        GNN_median.append(GNN_prediction_time)
+                    for gnn_val, taey_val in zip(GNN_prediction, taeydennae_prediction):
+                        if gnn_val == taey_val == 1:
+                            VP += 1
+                        elif gnn_val == taey_val == 0:
+                            VN += 1
+                        elif gnn_val == 1 and taey_val == 0:
+                            FP += 1
+                        elif gnn_val == 0 and taey_val == 1:
+                            FN += 1
+            taeydennae_time += taeydennae_prediction_time
+            GNN_time += GNN_prediction_time
+    print("Number of graphs :", nb_graphs)
     print("Accuracy :",(VP+VN)/(VP+VN+FP+FN))
     print("Precision :",VP/(VP+FP))
     print("Recall :",VP/(VP+FN))
     print("F1-score :",(2*VP)/(2*VP+FP+FN))
-    print("Taeydennae average time :", taeydennae_time/nb_files)
+    print("Taeydennae average time :", taeydennae_time/nb_graphs)
     print("Taeydennae median time :", statistics.median(taeydennae_median))
     print("Taeydennae cumulative time :", taeydennae_time)
-    print("GNN average time :", GNN_time/nb_files)
+    print("GNN average time :", GNN_time/nb_graphs)
     print("GNN median time :", statistics.median(GNN_median))
     print("GNN cumulative time :", GNN_time)
 
