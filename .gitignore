@@ -5,7 +5,6 @@ Data/IAF_TrainSet
 Data/IAF_TestSet
 GNN/.venv
 GNN/cache
-GNN/model
 BigData/A-inc
 BigData/B-inc
 BigData/cache
