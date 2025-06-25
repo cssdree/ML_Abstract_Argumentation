@@ -11,7 +11,7 @@ import os
 
 IAF_root = "../Data/IAF_TrainSet"
 modelpath = "model/egat_f23_f1.pth"
-device = "cpu"
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 seed = 666
 torch.manual_seed(seed)

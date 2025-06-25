@@ -5,38 +5,58 @@ import numpy
 import torch
 import dgl
 import os
+import re
 
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-def CreateDGLGraphs(apxpath, device="cpu"):
+def CreateDGLGraphs(apxpath, device=device):
     num_nodes = int(os.path.basename(apxpath).split("_")[1])
     attackers = []
     attacked = []
     certain_nodes = []
     is_node_uncertain = [0]*num_nodes
     is_edge_uncertain = []
+    def_args = []
+    inc_args = []
+    def_atts = []
+    inc_atts = []
+    pattern = re.compile(r'^(\?)?(arg|att)\((.*?)\).$')
     with open(apxpath, "r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
-            if line.startswith('arg(') and line.endswith(').'):
-                certain_nodes.append(int(line[4:-2]))
-            elif line.startswith('?arg(') and line.endswith(').'):
-                is_node_uncertain[int(line[5:-2])] = 1
-            elif line.startswith('att(') and line.endswith(').'):
-                attackers.append(int(line[4:-2].split(",")[0]))
-                attacked.append(int(line[4:-2].split(",")[1]))
-                is_edge_uncertain.append(0)
-            elif line.startswith('?att(') and line.endswith(').'):
-                attackers.append(int(line[5:-2].split(",")[0]))
-                attacked.append(int(line[5:-2].split(",")[1]))
-                is_edge_uncertain.append(1)
+            match = pattern.match(line)
+            if not match:
+                continue
+            is_uncertain = bool(match.group(1))
+            statement = match.group(2)
+            content = str(match.group(3))
+            if statement == "arg":
+                if is_uncertain:
+                    inc_args.append(content)
+                    is_node_uncertain[int(content)] = 1
+                else:
+                    def_args.append(content)
+                    certain_nodes.append(int(content))
+            else:
+                src, tgt = content.split(',')
+                if is_uncertain:
+                    inc_atts.append(tuple([src, tgt]))
+                    attackers.append(int(src))
+                    attacked.append(int(tgt))
+                    is_edge_uncertain.append(1)
+                else:
+                    def_atts.append(tuple([src, tgt]))
+                    attackers.append(int(src))
+                    attacked.append(int(tgt))
+                    is_edge_uncertain.append(0)
         is_node_uncertain = torch.tensor(is_node_uncertain, dtype=torch.float32).to(device)
         g = dgl.graph((torch.tensor(attackers), torch.tensor(attacked)), num_nodes=num_nodes).to(device)
         g = dgl.add_self_loop(g)
         g.edata["is_uncertain"] = torch.tensor(is_edge_uncertain+[0]*num_nodes, dtype=torch.float32).unsqueeze(1)  #rajout des self loop
-    return g, num_nodes, certain_nodes, is_node_uncertain
+    return g, num_nodes, certain_nodes, is_node_uncertain, def_args, inc_args, def_atts, inc_atts
 
 
-def GetFeatures(num_nodes, certain_nodes, apxpath, ptpath, device="cpu"):
+def GetFeatures(num_nodes, certain_nodes, apxpath, ptpath, device=device):
     if os.path.exists(ptpath):
         raw_features = torch.load(ptpath, map_location="cpu").numpy()
         features = StandardScaler().fit_transform(raw_features)  #normalisation des features
@@ -62,7 +82,7 @@ def FullFeatures(num_nodes, certain_nodes, raw_features):
     return full_features
 
 
-def GetLabels(num_nodes, csvpath, device="cpu"):
+def GetLabels(num_nodes, csvpath, device=device):
     label = [[numpy.nan]*4 for i in range(num_nodes)]
     #tableau des labels de taille num_nodes*4 pour les 4 problèmes de décision : PCA, NCA, PSA, NSA
     with open(csvpath, "r", encoding="utf-8") as f:
@@ -76,7 +96,7 @@ def GetLabels(num_nodes, csvpath, device="cpu"):
 
 
 class Dataset(DGLDataset):
-    def __init__(self, IAF_root, device="cpu"):
+    def __init__(self, IAF_root, device=device):
         self.IAF_root = IAF_root
         self.completions_root = f"{self.IAF_root}/completions"
         self.label_root = f"{self.IAF_root}/labels"
@@ -90,7 +110,7 @@ class Dataset(DGLDataset):
         for apxfile in os.listdir(self.IAF_root):
             if apxfile.endswith(".apx"):
                 filename = os.path.splitext(apxfile)[0]
-                graph, num_nodes, certain_nodes, is_node_uncertain = CreateDGLGraphs(f"{self.IAF_root}/{filename}.apx")
+                graph, num_nodes, certain_nodes, is_node_uncertain, def_args, inc_args, def_atts, inc_atts = CreateDGLGraphs(f"{self.IAF_root}/{filename}.apx")
                 features_MAX = GetFeatures(num_nodes, certain_nodes, f"{self.completions_root}/{filename}_MAX.apx", f"{self.features_root}/{filename}_MAX.pt")
                 features_MIN = GetFeatures(num_nodes, certain_nodes, f"{self.completions_root}/{filename}_MIN.apx", f"{self.features_root}/{filename}_MIN.pt")
                 features = torch.cat([is_node_uncertain.unsqueeze(1), features_MAX, features_MIN], dim=1)

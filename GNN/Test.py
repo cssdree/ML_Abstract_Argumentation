@@ -12,7 +12,7 @@ import os
 IAF_root = "../Data/IAF_TestSet"
 modelpath = "model/egat_f23_f1.pth"
 taeydennae_root = "../taeydennae_linux_x86-64"
-device = "cpu"
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def Statistics(model, device="cpu"):

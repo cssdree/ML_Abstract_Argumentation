@@ -5,10 +5,10 @@ import torch
 import dgl
 import re
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def CreateDGLGraphs(apxpath, device="cpu"):
+def CreateDGLGraphs(apxpath, device=device):
     num_nodes = GetNumNodes(apxpath)
-    nodes_id = {}
     attackers = []
     attacked = []
     certain_nodes = []
@@ -18,6 +18,7 @@ def CreateDGLGraphs(apxpath, device="cpu"):
     inc_args = []
     def_atts = []
     inc_atts = []
+    nodes_id = {}
     id_counter = itertools.count(start=0)
     pattern = re.compile(r'^(\?)?(arg|att)\((.*?)\).$')
     with open(apxpath, "r", encoding="utf-8") as f:
@@ -59,7 +60,7 @@ def CreateDGLGraphs(apxpath, device="cpu"):
     return g, num_nodes, certain_nodes, nodes_id, is_node_uncertain, def_args, inc_args, def_atts, inc_atts
 
 
-def GetFeatures(num_nodes, certain_nodes, apxpath, device="cpu"):
+def GetFeatures(num_nodes, certain_nodes, apxpath, device=device):
     raw_features = af_reader_py.compute_features(apxpath, 10000, 0.000001)
     if len(raw_features) != num_nodes:
         raw_features = FullFeatures(num_nodes, certain_nodes, raw_features)
