@@ -15,33 +15,31 @@ def GetAcceptability(model, apxpath, task, argID):
     filename = os.path.splitext(os.path.basename(apxpath))[0]
     graph, num_nodes, certain_nodes, is_node_uncertain, def_args, inc_args, def_atts, inc_atts = CreateDGLGraphs(apxpath)
     len_def_atts_MIN = CreateCompletions(def_args, def_atts, inc_args, inc_atts, f"cache/{filename}.apx")
-    if len_def_atts_MIN == 0:
-        return "ERROR : Zero attack in the minimal completion"
     features_MAX = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MAX.apx", f"cache/{filename}_MAX.pt")
     features_MIN = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MIN.apx", f"cache/{filename}_MIN.pt")
     node_feats = torch.cat([is_node_uncertain.unsqueeze(1), features_MAX, features_MIN], dim=1)
     with torch.no_grad():
         node_out, edge_out = model(graph, node_feats, graph.edata["is_uncertain"])
-        predicted = (torch.sigmoid(node_out) > 0.5).tolist()
+        predictions = (torch.sigmoid(node_out) > 0.5).tolist()
     if task == "PCA":
-        if predicted[int(argID)][0] == True:
+        if predictions[int(argID)][0] == True:
             return "YES"
-        elif predicted[int(argID)][0] == False:
+        elif predictions[int(argID)][0] == False:
             return "NO"
     elif task == "NCA":
-        if predicted[int(argID)][1] == True:
+        if predictions[int(argID)][1] == True:
             return "YES"
-        elif predicted[int(argID)][1] == False:
+        elif predictions[int(argID)][1] == False:
             return "NO"
     elif task == "PSA":
-        if predicted[int(argID)][2] == True:
+        if predictions[int(argID)][2] == True:
             return "YES"
-        elif predicted[int(argID)][2] == False:
+        elif predictions[int(argID)][2] == False:
             return "NO"
     elif task == "NSA":
-        if predicted[int(argID)][3] == True:
+        if predictions[int(argID)][3] == True:
             return "YES"
-        elif predicted[int(argID)][3] == False:
+        elif predictions[int(argID)][3] == False:
             return "NO"
 
 
