@@ -2,11 +2,12 @@ from GNN.iaf_egat_f23_f1 import CreateCompletions
 from GNN.Dataset import CreateDGLGraphs
 from Data.Labeling import CertainsArgs
 from GNN.Dataset import GetFeatures
-from GNN.Dataset import Dataset
+from GNN.Dataset import GetLabels
 from GNN.Training import EGAT
 import subprocess
 import torch
 import time
+import ast
 import os
 
 IAF_root = "../Data/IAF_TestSet"
@@ -57,8 +58,6 @@ def TimeWithGNN(model):
 
 
 def Statistics():
-    iaf_dataset = Dataset(IAF_root)
-    model.eval()
     VP = 0  #Vrai Positif : args acceptés qu'on a classé comme accepctés
     VN = 0  #Vrai Négatif : args rejetés qu'on a classé comme rejetés
     FP = 0  #Faux Positif : args rejetés qu'on a classé comme acceptés
@@ -68,34 +67,48 @@ def Statistics():
     PSA = {"name": "PSA", "VP": 0, "VN": 0, "FP": 0, "FN": 0}
     NSA = {"name": "NSA", "VP": 0, "VN": 0, "FP": 0, "FN": 0}
     problems = [PCA, NCA, PSA, NSA]
-    with torch.no_grad():
-        for graph in iaf_dataset:
-            node_feats = graph.ndata["feat"].to(device)
-            edge_feats = graph.edata["is_uncertain"].to(device)
-            label = graph.ndata["label"].to(device)
-            mask = graph.ndata["mask"].to(device).bool()
-            node_out, edge_out = model(graph, node_feats, edge_feats)
-            predicted = (torch.sigmoid(node_out[mask])>0.5).float().tolist()
-            label = label[mask].tolist()
-            for p_list, l_list in zip(predicted, label):
-                for p_val, l_val in zip(p_list, l_list):
+    for txtfile in os.listdir(f"{IAF_root}/predictions"):
+        if txtfile.endswith(".txt"):
+            filename = txtfile.replace("_ST.txt", "")
+            csvpath = f"{IAF_root}/labels/{filename}_ST.csv"
+            num_nodes = int(filename.split("_")[1])
+            labels = GetLabels(num_nodes, csvpath, device).tolist()
+            with open(f"{IAF_root}/predictions/{filename}_ST.txt", "r", encoding="utf-8") as f:
+                predictions = ast.literal_eval(f.readline().strip())
+            for l_list, p_list in zip(labels, predictions):
+                problem_id = 0
+                for l_val, p_val in zip(p_list, l_list):
+                    problem_dict = problems[problem_id]
                     if p_val == l_val == 1:
+                        problem_dict["VP"] += 1
                         VP += 1
                     elif p_val == l_val == 0:
+                        problem_dict["VN"] += 1
                         VN += 1
                     elif p_val == 1 and l_val == 0:
+                        problem_dict["FP"] += 1
                         FP += 1
                     elif p_val == 0 and l_val == 1:
+                        problem_dict["FN"] += 1
                         FN += 1
+                    problem_id += 1
     print("Accuracy :",(VP+VN)/(VP+VN+FP+FN))
     print("Precision :",VP/(VP+FP))
     print("Recall :",VP/(VP+FN))
     print("F1-score :",(2*VP)/(2*VP+FP+FN))
+    print("")
+    for problem in problems:
+        problem_name = problem["name"]
+        print(f"{problem_name} Accuracy :", (problem["VP"]+problem["VN"])/(problem["VP"]+problem["VN"]+problem["FP"]+problem["FN"]))
+        print(f"{problem_name} Precision :", problem["VP"]/(problem["VP"]+problem["FP"]))
+        print(f"{problem_name} Recall :", problem["VP"]/(problem["VP"]+problem["FN"]))
+        print(f"{problem_name} F1-score :", (2*problem["VP"])/(2*problem["VP"]+problem["FP"]+problem["FN"]))
+        print("")
 
 
 if __name__ == "__main__":
-    TimeWithTaeydennae()
-    model = EGAT(23, 1, 6, 6, 4, 1, heads=[5, 3, 3]).to(device)
-    model.load_state_dict(torch.load(modelpath, map_location=device))
-    TimeWithGNN(model)
-    #Statistics()
+    #TimeWithTaeydennae()
+    #model = EGAT(23, 1, 6, 6, 4, 1, heads=[5, 3, 3]).to(device)
+    #model.load_state_dict(torch.load(modelpath, map_location=device))
+    #TimeWithGNN(model)
+    Statistics()
