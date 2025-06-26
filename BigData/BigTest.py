@@ -10,23 +10,24 @@ import time
 import ast
 import os
 
-#IAF_root="A-inc"
-IAF_root = "B-inc"
-modelpath = "../GNN/model/egat_f23_f1.pth"
 taeydennae_root = "../taeydennae_linux_x86-64"
+IAF_root = "A-inc"
+#IAF_root = "B-inc"
+#sem = "ST"
+sem = "PR"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def TestTaeydennae():
     os.makedirs(f"{IAF_root}/taeydennae_labels", exist_ok=True)
-    os.makedirs(f"{IAF_root}/taeydennae_labels/timeouts", exist_ok=True)
+    os.makedirs(f"{IAF_root}/taeydennae_labels/timeouts-{sem}", exist_ok=True)
     for apxfile in os.listdir(IAF_root):
         if apxfile.endswith(".apx"):
             filename = os.path.splitext(apxfile)[0]
             apxpath = f"{IAF_root}/{filename}.apx"
             argpath = f"{IAF_root}/{filename}.arg"
-            labelpath = f"{IAF_root}/taeydennae_labels/{filename}_ST.txt"
-            timeoutpath = f"{IAF_root}/taeydennae_labels/timeouts/{filename}_timeout.txt"
+            labelpath = f"{IAF_root}/taeydennae_labels/{filename}_{sem}.txt"
+            timeoutpath = f"{IAF_root}/taeydennae_labels/timeouts-{sem}/{filename}_timeout.txt"
             if not os.path.exists(labelpath) and not os.path.exists(timeoutpath):
                 predictions = []
                 timeout_occurred = False
@@ -35,7 +36,7 @@ def TestTaeydennae():
                 start_time = time.time()
                 for task in ["PCA", "NCA", "PSA", "NSA"]:
                     try:
-                        prediction = subprocess.run([taeydennae_root, "-p", f"{task}-ST", "-f", apxpath, "-a", str(arg)], capture_output=True, text=True, timeout=10)
+                        prediction = subprocess.run([taeydennae_root, "-p", f"{task}-{sem}", "-f", apxpath, "-a", str(arg)], capture_output=True, text=True, timeout=10)
                         if prediction.returncode == 0 and "YES" in prediction.stdout:
                             predictions.append(1)
                         elif prediction.returncode == 0 and "NO" in prediction.stdout:
@@ -58,17 +59,17 @@ def TestTaeydennae():
 def TestGNN(model):
     os.makedirs("cache", exist_ok=True)
     os.makedirs(f"{IAF_root}/GNN_labels", exist_ok=True)
-    os.makedirs(f"{IAF_root}/GNN_labels/failed", exist_ok=True)
-    os.makedirs(f"{IAF_root}/GNN_labels/failed/crash", exist_ok=True)
-    os.makedirs(f"{IAF_root}/GNN_labels/failed/error", exist_ok=True)
+    os.makedirs(f"{IAF_root}/GNN_labels/failed-{sem}", exist_ok=True)
+    os.makedirs(f"{IAF_root}/GNN_labels/failed-{sem}/crash", exist_ok=True)
+    os.makedirs(f"{IAF_root}/GNN_labels/failed-{sem}/error", exist_ok=True)
     for apxfile in os.listdir(f"{IAF_root}"):
         if apxfile.endswith(".apx"):
             filename = os.path.splitext(apxfile)[0]
             apxpath = f"{IAF_root}/{filename}.apx"
             argpath = f"{IAF_root}/{filename}.arg"
-            labelpath = f"{IAF_root}/GNN_labels/{filename}_ST.txt"
-            crashpath = f"{IAF_root}/GNN_labels/failed/crash/{filename}_crash.txt"
-            errorpath = f"{IAF_root}/GNN_labels/failed/error/{filename}_error.txt"
+            labelpath = f"{IAF_root}/GNN_labels/{filename}_{sem}.txt"
+            crashpath = f"{IAF_root}/GNN_labels/failed-{sem}/crash/{filename}_crash.txt"
+            errorpath = f"{IAF_root}/GNN_labels/failed-{sem}/error/{filename}_error.txt"
             if not os.path.exists(labelpath) and not os.path.exists(crashpath) and not os.path.exists(errorpath):
                 print(filename)
                 with open(argpath, "r", encoding="utf-8") as f:
@@ -104,24 +105,24 @@ def GlobalStatistics():
     GNN_median = []
     nb_graphs_predicted_GNN = len([f for f in Path(f"{IAF_root}/GNN_labels").iterdir() if f.is_file()])
     nb_graphs_predicted_taey = len([f for f in Path(f"{IAF_root}/taeydennae_labels").iterdir() if f.is_file()])
-    nb_graphs_failed_GNN = sum(1 for f in Path(f"{IAF_root}/GNN_labels/failed").rglob('*') if f.is_file())
-    nb_graphs_failed_taey = sum(1 for f in Path(f"{IAF_root}/taeydennae_labels/timeouts").rglob('*') if f.is_file())
+    nb_graphs_failed_GNN = sum(1 for f in Path(f"{IAF_root}/GNN_labels/failed-{sem}").rglob('*') if f.is_file())
+    nb_graphs_failed_taey = sum(1 for f in Path(f"{IAF_root}/taeydennae_labels/timeouts-{sem}").rglob('*') if f.is_file())
     for txtfile in os.listdir(f"{IAF_root}/GNN_labels"):
         if txtfile.endswith(".txt"):
-            filename = txtfile.replace("_ST.txt","")
-            if os.path.exists(f"{IAF_root}/taeydennae_labels/timeouts/{filename}_timeout.txt"):
+            filename = "_".join(os.path.splitext(txtfile)[0].split("_")[:-1])
+            if os.path.exists(f"{IAF_root}/taeydennae_labels/timeouts-{sem}/{filename}_timeout.txt"):
                 taeydennae_prediction_time = 20
                 taeydennae_median.append(taeydennae_prediction_time)
-                with open(f"{IAF_root}/GNN_labels/{filename}_ST.txt", "r", encoding="utf-8") as f:
+                with open(f"{IAF_root}/GNN_labels/{filename}_{sem}.txt", "r", encoding="utf-8") as f:
                     GNN_prediction = ast.literal_eval(f.readline().strip())
                     GNN_prediction_time = float(f.readline().strip())
                     GNN_median.append(GNN_prediction_time)
             else :
-                with open(f"{IAF_root}/taeydennae_labels/{filename}_ST.txt", "r", encoding="utf-8") as f:
+                with open(f"{IAF_root}/taeydennae_labels/{filename}_{sem}.txt", "r", encoding="utf-8") as f:
                     taeydennae_prediction = ast.literal_eval(f.readline().strip())
                     taeydennae_prediction_time = float(f.readline().strip())
                     taeydennae_median.append(taeydennae_prediction_time)
-                with open(f"{IAF_root}/GNN_labels/{filename}_ST.txt", "r", encoding="utf-8") as f:
+                with open(f"{IAF_root}/GNN_labels/{filename}_{sem}.txt", "r", encoding="utf-8") as f:
                     GNN_prediction = ast.literal_eval(f.readline().strip())
                     GNN_prediction_time = float(f.readline().strip())
                     GNN_median.append(GNN_prediction_time)
@@ -163,11 +164,11 @@ def DecisionProblemStatistics():
     problems = [PCA, NCA, PSA, NSA]
     for txtfile in os.listdir(f"{IAF_root}/GNN_labels"):
         if txtfile.endswith(".txt"):
-            filename = txtfile.replace("_ST.txt", "")
-            if not os.path.exists(f"{IAF_root}/taeydennae_labels/timeouts/{filename}_timeout.txt"):
-                with open(f"{IAF_root}/taeydennae_labels/{filename}_ST.txt", "r", encoding="utf-8") as f:
+            filename = "_".join(os.path.splitext(txtfile)[0].split("_")[:-1])
+            if not os.path.exists(f"{IAF_root}/taeydennae_labels/timeouts-{sem}/{filename}_timeout.txt"):
+                with open(f"{IAF_root}/taeydennae_labels/{filename}_{sem}.txt", "r", encoding="utf-8") as f:
                     taeydennae_prediction = ast.literal_eval(f.readline().strip())
-                with open(f"{IAF_root}/GNN_labels/{filename}_ST.txt", "r", encoding="utf-8") as f:
+                with open(f"{IAF_root}/GNN_labels/{filename}_{sem}.txt", "r", encoding="utf-8") as f:
                     GNN_prediction = ast.literal_eval(f.readline().strip())
                 problem_id = 0
                 for gnn_val, taey_val in zip(GNN_prediction, taeydennae_prediction):
@@ -191,9 +192,9 @@ def DecisionProblemStatistics():
 
 
 if __name__ == "__main__":
-    #TestTaeydennae()
+    TestTaeydennae()
     #model = EGAT(23, 1, 6, 6, 4, 1, heads=[5, 3, 3]).to(device)
-    #model.load_state_dict(torch.load(modelpath, map_location=device))
+    #model.load_state_dict(torch.load(f"../GNN/models/egat_f23_f1_{sem}.pth", map_location=device))
     #TestGNN(model)
-    GlobalStatistics()
-    DecisionProblemStatistics()
+    #GlobalStatistics()
+    #DecisionProblemStatistics()
