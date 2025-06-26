@@ -2,7 +2,6 @@ from BigData.BigDataset import CreateDGLGraphs
 from BigData.BigDataset import GetFeatures
 from Data.Graphs import CreateCompletions
 from GNN.Training import EGAT
-from pathlib import Path
 import subprocess
 import statistics
 import torch
@@ -29,6 +28,7 @@ def TestTaeydennae():
             labelpath = f"{IAF_root}/taeydennae_labels/{filename}_{sem}.txt"
             timeoutpath = f"{IAF_root}/taeydennae_labels/timeouts-{sem}/{filename}_timeout.txt"
             if not os.path.exists(labelpath) and not os.path.exists(timeoutpath):
+                print(filename)
                 predictions = []
                 timeout_occurred = False
                 with open(argpath, "r", encoding="utf-8") as f:
@@ -94,6 +94,25 @@ def TestGNN(model):
                     f.write(f"{predictions_time}\n")
 
 
+def CountFiles(root):
+    count = 0
+    if root == f"{IAF_root}/GNN_labels" or root == f"{IAF_root}/taeydennae_labels":
+        for file in os.listdir(root):
+            if file.endswith(f"{sem}.txt"):
+                count += 1
+        return count
+    if root == f"{IAF_root}/GNN_labels/failed-{sem}":
+        for file in os.listdir(f"{root}/crash"):
+            count += 1
+        for file in os.listdir(f"{root}/error"):
+            count += 1
+        return count
+    if root == f"{IAF_root}/taeydennae_labels/timeouts-{sem}":
+        for file in os.listdir(root):
+            count += 1
+        return count
+
+
 def GlobalStatistics():
     VP = 0  #Vrai Positif : args acceptés qu'on a classé comme accepctés
     VN = 0  #Vrai Négatif : args rejetés qu'on a classé comme rejetés
@@ -103,12 +122,12 @@ def GlobalStatistics():
     GNN_time = 0
     taeydennae_median = []
     GNN_median = []
-    nb_graphs_predicted_GNN = len([f for f in Path(f"{IAF_root}/GNN_labels").iterdir() if f.is_file()])
-    nb_graphs_predicted_taey = len([f for f in Path(f"{IAF_root}/taeydennae_labels").iterdir() if f.is_file()])
-    nb_graphs_failed_GNN = sum(1 for f in Path(f"{IAF_root}/GNN_labels/failed-{sem}").rglob('*') if f.is_file())
-    nb_graphs_failed_taey = sum(1 for f in Path(f"{IAF_root}/taeydennae_labels/timeouts-{sem}").rglob('*') if f.is_file())
+    nb_graphs_predicted_GNN = CountFiles(f"{IAF_root}/GNN_labels")
+    nb_graphs_predicted_taey = CountFiles(f"{IAF_root}/taeydennae_labels")
+    nb_graphs_failed_GNN = CountFiles(f"{IAF_root}/GNN_labels/failed-{sem}")
+    nb_graphs_failed_taey = CountFiles(f"{IAF_root}/taeydennae_labels/timeouts-{sem}")
     for txtfile in os.listdir(f"{IAF_root}/GNN_labels"):
-        if txtfile.endswith(".txt"):
+        if txtfile.endswith(f"{sem}.txt"):
             filename = "_".join(os.path.splitext(txtfile)[0].split("_")[:-1])
             if os.path.exists(f"{IAF_root}/taeydennae_labels/timeouts-{sem}/{filename}_timeout.txt"):
                 taeydennae_prediction_time = 20
@@ -135,8 +154,8 @@ def GlobalStatistics():
                         FP += 1
                     elif gnn_val == 0 and taey_val == 1:
                         FN += 1
-        taeydennae_time += taeydennae_prediction_time
-        GNN_time += GNN_prediction_time
+            taeydennae_time += taeydennae_prediction_time
+            GNN_time += GNN_prediction_time
     print("Accuracy :",(VP+VN)/(VP+VN+FP+FN))
     print("Precision :",VP/(VP+FP))
     print("Recall :",VP/(VP+FN))
@@ -163,7 +182,7 @@ def DecisionProblemStatistics():
     NSA = {"name": "NSA", "VP": 0, "VN": 0, "FP": 0, "FN":0}
     problems = [PCA, NCA, PSA, NSA]
     for txtfile in os.listdir(f"{IAF_root}/GNN_labels"):
-        if txtfile.endswith(".txt"):
+        if txtfile.endswith(f"{sem}.txt"):
             filename = "_".join(os.path.splitext(txtfile)[0].split("_")[:-1])
             if not os.path.exists(f"{IAF_root}/taeydennae_labels/timeouts-{sem}/{filename}_timeout.txt"):
                 with open(f"{IAF_root}/taeydennae_labels/{filename}_{sem}.txt", "r", encoding="utf-8") as f:
@@ -192,9 +211,9 @@ def DecisionProblemStatistics():
 
 
 if __name__ == "__main__":
-    TestTaeydennae()
+    #TestTaeydennae()
     #model = EGAT(23, 1, 6, 6, 4, 1, heads=[5, 3, 3]).to(device)
-    #model.load_state_dict(torch.load(f"../GNN/models/egat_f23_f1_{sem}.pth", map_location=device))
+    #model.load_state_dict(torch.load(f"..GNN/models/egat_f23_f1_{sem}.pth", map_location=device))
     #TestGNN(model)
-    #GlobalStatistics()
-    #DecisionProblemStatistics()
+    GlobalStatistics()
+    DecisionProblemStatistics()
