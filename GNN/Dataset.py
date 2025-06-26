@@ -96,11 +96,12 @@ def GetLabels(num_nodes, csvpath, device=device):
 
 
 class Dataset(DGLDataset):
-    def __init__(self, IAF_root, device=device):
+    def __init__(self, IAF_root, sem, device=device):
         self.IAF_root = IAF_root
         self.completions_root = f"{self.IAF_root}/completions"
         self.label_root = f"{self.IAF_root}/labels"
         self.features_root = f"{self.IAF_root}/features"
+        self.sem = sem
         self.device = device
         super().__init__(name="Dataset")
 
@@ -114,7 +115,7 @@ class Dataset(DGLDataset):
                 features_MAX = GetFeatures(num_nodes, certain_nodes, f"{self.completions_root}/{filename}_MAX.apx", f"{self.features_root}/{filename}_MAX.pt")
                 features_MIN = GetFeatures(num_nodes, certain_nodes, f"{self.completions_root}/{filename}_MIN.apx", f"{self.features_root}/{filename}_MIN.pt")
                 features = torch.cat([is_node_uncertain.unsqueeze(1), features_MAX, features_MIN], dim=1)
-                label = GetLabels(num_nodes, f"{self.label_root}/{filename}_ST.csv")
+                label = GetLabels(num_nodes, f"{self.label_root}/{filename}_{self.sem}.csv")
                 mask = ~torch.isnan(label).any(dim=1)  #noeuds dont tous les labels sont valides
                 graph.ndata["feat"] = features
                 graph.ndata["mask"] = mask

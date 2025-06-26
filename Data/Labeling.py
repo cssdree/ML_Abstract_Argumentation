@@ -7,10 +7,6 @@ import os
 IAF_root = "IAF_TestSet"
 taeydennae_root = "../taeydennae_linux_x86-64"
 
-semantics = ["ST"]
-decision_problems = ["PCA", "NCA", "PSA", "NSA"]
-graphs_results = {}  #dict that contains the acceptability of each arg for each decision problem
-
 
 def Task(filename, sem, arg, problem):
     result = subprocess.run(
@@ -42,6 +38,9 @@ def CertainsArgs(apxpath):
 
 if __name__ == "__main__":
     #Filling the "graphs_results" dictionary
+    graphs_results = {}
+    semantics = ["ST", "PR"]
+    decision_problems = ["PCA", "NCA", "PSA", "NSA"]
     with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
         futures = []
         for sem in semantics:

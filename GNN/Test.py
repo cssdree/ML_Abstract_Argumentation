@@ -11,8 +11,9 @@ import ast
 import os
 
 IAF_root = "../Data/IAF_TestSet"
-modelpath = "model/egat_f23_f1.pth"
 taeydennae_root = "../taeydennae_linux_x86-64"
+#sem = "ST"
+sem = "PR"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
@@ -25,7 +26,7 @@ def TimeWithTaeydennae():
                 filename = os.path.splitext(apxfile)[0]
                 certain_args = CertainsArgs(f"{IAF_root}/{filename}.apx")
                 for arg in certain_args:
-                    prediction = subprocess.run([taeydennae_root, "-p", f"{task}-ST", "-f", f"{IAF_root}/{filename}.apx", "-a", str(arg)], capture_output=True, text=True)
+                    prediction = subprocess.run([taeydennae_root, "-p", f"{task}-{sem}", "-f", f"{IAF_root}/{filename}.apx", "-a", str(arg)], capture_output=True, text=True)
                     nb_requests += 1
     end_time = time.time()
     print(f"{nb_requests} requests took", end_time-start_time, "seconds with Taeydennae")
@@ -41,7 +42,7 @@ def TimeWithGNN(model):
         if apxfile.endswith(".apx"):
             filename = os.path.splitext(apxfile)[0]
             apxpath = f"{IAF_root}/{filename}.apx"
-            predictionpath = f"{IAF_root}/predictions/{filename}_ST.txt"
+            predictionpath = f"{IAF_root}/predictions/{filename}_{sem}.txt"
             graph, num_nodes, certain_nodes, is_node_uncertain, def_args, inc_args, def_atts, inc_atts = CreateDGLGraphs(apxpath)
             len_def_atts_MIN = CreateCompletions(def_args, def_atts, inc_args, inc_atts, f"cache/{filename}.apx")
             features_MAX = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MAX.apx",f"cache/{filename}_MAX.pt")
@@ -69,11 +70,11 @@ def Statistics():
     problems = [PCA, NCA, PSA, NSA]
     for txtfile in os.listdir(f"{IAF_root}/predictions"):
         if txtfile.endswith(".txt"):
-            filename = txtfile.replace("_ST.txt", "")
-            csvpath = f"{IAF_root}/labels/{filename}_ST.csv"
+            filename = "_".join(os.path.splitext(txtfile)[0].split("_")[:-1])
+            csvpath = f"{IAF_root}/labels/{filename}_{sem}.csv"
             num_nodes = int(filename.split("_")[1])
             labels = GetLabels(num_nodes, csvpath, device).tolist()
-            with open(f"{IAF_root}/predictions/{filename}_ST.txt", "r", encoding="utf-8") as f:
+            with open(f"{IAF_root}/predictions/{filename}_{sem}.txt", "r", encoding="utf-8") as f:
                 predictions = ast.literal_eval(f.readline().strip())
             for l_list, p_list in zip(labels, predictions):
                 problem_id = 0
@@ -109,6 +110,6 @@ def Statistics():
 if __name__ == "__main__":
     #TimeWithTaeydennae()
     #model = EGAT(23, 1, 6, 6, 4, 1, heads=[5, 3, 3]).to(device)
-    #model.load_state_dict(torch.load(modelpath, map_location=device))
+    #model.load_state_dict(torch.load(f"models/egat_f23_f1_{sem}.pth", map_location=device))
     #TimeWithGNN(model)
     Statistics()

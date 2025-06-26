@@ -10,7 +10,8 @@ import dgl
 import os
 
 IAF_root = "../Data/IAF_TrainSet"
-modelpath = "model/egat_f23_f1.pth"
+#sem = "ST"
+sem = "PR"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 seed = 666
@@ -44,7 +45,7 @@ class EGAT(nn.Module):
 
 
 if __name__ == "__main__":
-    os.makedirs("model", exist_ok=True)
+    os.makedirs("models", exist_ok=True)
     model = EGAT(23, 1, 6, 6, 4, 1, heads=[5, 3, 3]).to(device)
     loss = nn.BCELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
@@ -52,7 +53,7 @@ if __name__ == "__main__":
     print(f"Total number of trainable parameters : {total_params}")
 
     print("Loading Data...")
-    iaf_dataset = Dataset(IAF_root,device=device)
+    iaf_dataset = Dataset(IAF_root, sem, device=device)
     generator = torch.Generator().manual_seed(seed)
     data_loader = dgl.dataloading.GraphDataLoader(iaf_dataset, batch_size=8, shuffle=True)
 
@@ -81,4 +82,4 @@ if __name__ == "__main__":
             for g in optimizer.param_groups:
                 g['lr'] = 0.001
         print("Batchs :", batch_count, "Epoch : ", epoch," Mean : " , statistics.fmean(tot_loss), " Median : ", statistics.median(tot_loss), "Sum loss : ", sum_tot_loss)
-    torch.save(model.state_dict(), modelpath)
+    torch.save(model.state_dict(), f"models/egat_f23_f1_{sem}.pth")
