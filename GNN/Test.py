@@ -13,7 +13,8 @@ import os
 IAF_root = "../Data/IAF_TestSet"
 taeydennae_root = "../taeydennae_linux_x86-64"
 #sem = "ST"
-sem = "PR"
+#sem = "PR"
+sem = "GR"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
@@ -108,8 +109,8 @@ def Statistics():
 
 
 if __name__ == "__main__":
-    #TimeWithTaeydennae()
-    #model = EGAT(23, 1, 6, 6, 4, 1, heads=[5, 3, 3]).to(device)
-    #model.load_state_dict(torch.load(f"models/egat_f23_f1_{sem}.pth", map_location=device))
-    #TimeWithGNN(model)
+    TimeWithTaeydennae()
+    model = EGAT(23, 1, 6, 6, 4, 1, heads=[5, 3, 3]).to(device)
+    model.load_state_dict(torch.load(f"models/egat_f23_f1_{sem}.pth", map_location=device))
+    TimeWithGNN(model)
     Statistics()

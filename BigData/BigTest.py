@@ -10,10 +10,11 @@ import ast
 import os
 
 taeydennae_root = "../taeydennae_linux_x86-64"
-#IAF_root = "A-inc"
-IAF_root = "B-inc"
+IAF_root = "A-inc"
+#IAF_root = "B-inc"
 #sem = "ST"
-sem = "PR"
+#sem = "PR"
+sem = "GR"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 

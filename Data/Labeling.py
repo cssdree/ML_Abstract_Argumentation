@@ -39,7 +39,7 @@ def CertainsArgs(apxpath):
 if __name__ == "__main__":
     #Filling the "graphs_results" dictionary
     graphs_results = {}
-    semantics = ["ST", "PR"]
+    semantics = ["ST", "PR", "GR"]
     decision_problems = ["PCA", "NCA", "PSA", "NSA"]
     with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
         futures = []
