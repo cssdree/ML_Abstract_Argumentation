@@ -19,7 +19,7 @@ def GenerateSeveralIAF(method,nbn,variable):
     Generate several graphs for each probability/edge of each number of nodes for the given method
     """
     for rep in range(nb_graphs):
-        graph = Graphs(method,nbn,variable)
+        graph = Graphs(method,nbn,variable, IAF_root)
         graph = CheckSimilarity(graph)
         graphs_done.add(graph.G)
         graph.MakeIncomplet()
@@ -30,7 +30,7 @@ def CheckSimilarity(graph):
     Checks that a graph has not already been made
     """
     while graph.G in graphs_done:
-        graph = Graphs(graph.method,graph.nbn,graph.var)
+        graph = Graphs(graph.method,graph.nbn,graph.var, IAF_root)
     return graph
 
 

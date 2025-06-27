@@ -3,9 +3,6 @@ import numpy as np
 import itertools
 import random
 
-#IAF_root = "IAF_TrainSet"
-IAF_root = "IAF_TestSet"
-
 nb_neighbors = 2  #number of neighbors with which each node is joined for watts strogatz
 prob_bi = 0.2  #probability that an edge is bidirectional
 probs_inc = [0.05,0.1,0.15,0.2]  #probabilities that an argument is uncertain
@@ -52,10 +49,11 @@ def GetMINCompletionAttacks(def_atts, inc_args):
 
 
 class Graphs:
-    def __init__(self, method, nbn, var):
+    def __init__(self, method, nbn, var, IAF_root):
         self.method = method
         self.nbn = nbn
         self.var = var
+        self.IAF_root = IAF_root
         self.CreateSettings()
         self.CreateGraph()
 
@@ -122,5 +120,5 @@ class Graphs:
 
     def Export(self, p_inc, inc_type, def_args, def_atts, inc_args, inc_atts):
         filename = self.CreateFilename(p_inc, inc_type)
-        WriteApx(def_args, def_atts, inc_args, inc_atts, f"{IAF_root}/{filename}.apx")
-        len_def_atts_MIN = CreateCompletions(def_args, def_atts, inc_args, inc_atts, f"{IAF_root}/completions/{filename}.apx")
+        WriteApx(def_args, def_atts, inc_args, inc_atts, f"{self.IAF_root}/{filename}.apx")
+        len_def_atts_MIN = CreateCompletions(def_args, def_atts, inc_args, inc_atts, f"{self.IAF_root}/completions/{filename}.apx")
