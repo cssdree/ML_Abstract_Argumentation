@@ -10,8 +10,8 @@ import ast
 import os
 
 taeydennae_root = "../taeydennae_linux_x86-64"
-IAF_root = "A-inc"
-#IAF_root = "B-inc"
+#IAF_root = "A-inc"
+IAF_root = "B-inc"
 #sem = "ST"
 sem = "PR"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -213,7 +213,7 @@ def DecisionProblemStatistics():
 if __name__ == "__main__":
     #TestTaeydennae()
     #model = EGAT(23, 1, 6, 6, 4, 1, heads=[5, 3, 3]).to(device)
-    #model.load_state_dict(torch.load(f"..GNN/models/egat_f23_f1_{sem}.pth", map_location=device))
+    #model.load_state_dict(torch.load(f"../GNN/models/egat_f23_f1_{sem}.pth", map_location=device))
     #TestGNN(model)
     GlobalStatistics()
     DecisionProblemStatistics()
