@@ -9,8 +9,8 @@ import time
 import ast
 import os
 
-taeydennae_root = "../taeydennae_linux_x86-64"
-IAF_root = "A-inc"
+taeydennae_root = "./taeydennae_linux_x86-64"
+IAF_root = "BigData/A-inc"
 #IAF_root = "B-inc"
 #sem = "ST"
 #sem = "PR"
