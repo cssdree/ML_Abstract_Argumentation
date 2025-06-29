@@ -9,12 +9,13 @@ import time
 import ast
 import os
 
-taeydennae_root = "../taeydennae_linux_x86-64"
-IAF_root = "A-inc"
-#IAF_root = "B-inc"
+#IAF_root = "BigData/A-inc"
+IAF_root = "BigData/B-inc"
 #sem = "ST"
-#sem = "PR"
-sem = "GR"
+sem = "PR"
+#sem = "GR"
+modelroot = f"GNN/models/egat_f23_f1_{sem}.pth"
+taeydennae_root = "./taeydennae_linux_x86-64"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
@@ -60,17 +61,16 @@ def TestTaeydennae():
 def TestGNN(model):
     os.makedirs("cache", exist_ok=True)
     os.makedirs(f"{IAF_root}/GNN_labels", exist_ok=True)
-    os.makedirs(f"{IAF_root}/GNN_labels/failed-{sem}", exist_ok=True)
-    os.makedirs(f"{IAF_root}/GNN_labels/failed-{sem}/crash", exist_ok=True)
-    os.makedirs(f"{IAF_root}/GNN_labels/failed-{sem}/error", exist_ok=True)
+    os.makedirs(f"{IAF_root}/GNN_labels/crash", exist_ok=True)
+    os.makedirs(f"{IAF_root}/GNN_labels/error", exist_ok=True)
     for apxfile in os.listdir(f"{IAF_root}"):
         if apxfile.endswith(".apx"):
             filename = os.path.splitext(apxfile)[0]
             apxpath = f"{IAF_root}/{filename}.apx"
             argpath = f"{IAF_root}/{filename}.arg"
             labelpath = f"{IAF_root}/GNN_labels/{filename}_{sem}.txt"
-            crashpath = f"{IAF_root}/GNN_labels/failed-{sem}/crash/{filename}_crash.txt"
-            errorpath = f"{IAF_root}/GNN_labels/failed-{sem}/error/{filename}_error.txt"
+            crashpath = f"{IAF_root}/GNN_labels/crash/{filename}_{sem}_crash.txt"
+            errorpath = f"{IAF_root}/GNN_labels/error/{filename}_{sem}_error.txt"
             if not os.path.exists(labelpath) and not os.path.exists(crashpath) and not os.path.exists(errorpath):
                 print(filename)
                 with open(argpath, "r", encoding="utf-8") as f:
@@ -212,9 +212,9 @@ def DecisionProblemStatistics():
 
 
 if __name__ == "__main__":
-    TestTaeydennae()
-    #model = EGAT(23, 1, 6, 6, 4, 1, heads=[5, 3, 3]).to(device)
-    #model.load_state_dict(torch.load(f"../GNN/models/egat_f23_f1_{sem}.pth", map_location=device))
-    #TestGNN(model)
+    #TestTaeydennae()
+    model = EGAT(23, 1, 6, 6, 4, 1, heads=[5, 3, 3]).to(device)
+    model.load_state_dict(torch.load(modelroot, map_location=device))
+    TestGNN(model)
     #GlobalStatistics()
     #DecisionProblemStatistics()

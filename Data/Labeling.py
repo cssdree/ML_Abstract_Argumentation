@@ -57,7 +57,6 @@ if __name__ == "__main__":
         for future in concurrent.futures.as_completed(futures):
             filename, arg, problem, result = future.result()
             graphs_results[filename][arg][problem] = result
-    print(graphs_results)
     #Building the csv files from "graphs_results" filled in
     os.makedirs(f"{IAF_root}/labels", exist_ok=True)
     for file in graphs_results.keys():

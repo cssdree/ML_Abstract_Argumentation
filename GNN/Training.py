@@ -11,7 +11,9 @@ import os
 
 IAF_root = "../Data/IAF_TrainSet"
 #sem = "ST"
-sem = "PR"
+#sem = "PR"
+sem = "GR"
+modelroot = f"models/egat_f23_f1_{sem}.pth"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 seed = 666
@@ -82,4 +84,4 @@ if __name__ == "__main__":
             for g in optimizer.param_groups:
                 g['lr'] = 0.001
         print("Batchs :", batch_count, "Epoch : ", epoch," Mean : " , statistics.fmean(tot_loss), " Median : ", statistics.median(tot_loss), "Sum loss : ", sum_tot_loss)
-    torch.save(model.state_dict(), f"models/egat_f23_f1_{sem}.pth")
+    torch.save(model.state_dict(), modelroot)
