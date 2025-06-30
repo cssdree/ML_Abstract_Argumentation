@@ -10,12 +10,12 @@ import time
 import ast
 import os
 
-IAF_root = "../Data/IAF_TestSet"
+IAF_root = "Data/IAF_TestSet"
 #sem = "ST"
-#sem = "PR"
-sem = "GR"
-modelroot = f"models/egat_f23_f1_{sem}.pth"
-taeydennae_root = "../taeydennae_linux_x86-64"
+sem = "PR"
+#sem = "GR"
+modelroot = f"GNN/models/egat_f23_f1_{sem}.pth"
+taeydennae_root = "./taeydennae_linux_x86-64"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
@@ -63,10 +63,10 @@ def TimeWithGNN(model):
 
 
 def Statistics():
-    VP = 0  #Vrai Positif : args acceptés qu'on a classé comme accepctés
-    VN = 0  #Vrai Négatif : args rejetés qu'on a classé comme rejetés
-    FP = 0  #Faux Positif : args rejetés qu'on a classé comme acceptés
-    FN = 0  #Faux Négatif : args acceptés qu'on a classé comme rejetés
+    VP = 0  #True Positive: accepted arguments that were classified as accepted
+    VN = 0  #True Negative: rejected arguments that were classified as rejected
+    FP = 0  #False Positive: rejected arguments that were classified as accepted
+    FN = 0  #False Negative: accepted arguments that were classified as rejected
     PCA = {"name": "PCA", "VP": 0, "VN": 0, "FP": 0, "FN": 0}
     NCA = {"name": "NCA", "VP": 0, "VN": 0, "FP": 0, "FN": 0}
     PSA = {"name": "PSA", "VP": 0, "VN": 0, "FP": 0, "FN": 0}

@@ -2,8 +2,8 @@ from Data.Graphs import Graphs
 import networkx as nx
 import os
 
-#IAF_root = "IAF_TrainSet"
-IAF_root = "IAF_TestSet"
+IAF_root = "Data/IAF_TrainSet"
+#IAF_root = "Data/IAF_TestSet"
 
 methods = [nx.erdos_renyi_graph, nx.watts_strogatz_graph, nx.barabasi_albert_graph]
 #nb_graphs = 5  #for the train set
@@ -27,7 +27,7 @@ def GenerateSeveralIAF(method,nbn,variable):
 
 def CheckSimilarity(graph):
     """
-    Checks that a graph has not already been made
+    Check that a graph has not already been made
     """
     while graph.G in graphs_done:
         graph = Graphs(graph.method,graph.nbn,graph.var, IAF_root)

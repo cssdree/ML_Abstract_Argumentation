@@ -47,9 +47,9 @@ def GetAcceptability(model, apxpath, problem, argID):
 
 if __name__ == "__main__":
     os.makedirs("cache", exist_ok=True)
-    apxpath = sys.argv[1]  #chemin du fichier AVEC EXTENSION
-    task = sys.argv[2]  #problème de décision - sémantique
-    argID = sys.argv[3]  #argument à évaluer
+    apxpath = sys.argv[1]
+    task = sys.argv[2]
+    argID = sys.argv[3]
     problem = task.split("-")[0]
     sem = task.split("-")[1]
     model = EGAT(23, 1, 6, 6, 4, 1, heads=[5, 3, 3]).to(device)

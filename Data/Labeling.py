@@ -3,12 +3,12 @@ import subprocess
 import csv
 import os
 
-#IAF_root = "IAF_TrainSet"
-IAF_root = "IAF_TestSet"
+IAF_root = "Data/IAF_TrainSet"
+#IAF_root = "Data/IAF_TestSet"
 #sem = "ST"
-#sem = "PR"
-sem = "GR"
-taeydennae_root = "../taeydennae_linux_x86-64"
+sem = "PR"
+#sem = "GR"
+taeydennae_root = "./taeydennae_linux_x86-64"
 
 
 def Task(filename, sem, arg, problem):

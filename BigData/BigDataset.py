@@ -56,7 +56,7 @@ def CreateDGLGraphs(apxpath, device=device):
         is_node_uncertain = torch.tensor(is_node_uncertain, dtype=torch.float32).to(device)
         g = dgl.graph((torch.tensor(attackers), torch.tensor(attacked)), num_nodes=num_nodes).to(device)
         g = dgl.add_self_loop(g)
-        g.edata["is_uncertain"] = torch.tensor(is_edge_uncertain+[0]*num_nodes, dtype=torch.float32).unsqueeze(1).to(device)  #rajout des self loop
+        g.edata["is_uncertain"] = torch.tensor(is_edge_uncertain+[0]*num_nodes, dtype=torch.float32).unsqueeze(1).to(device)
     return g, num_nodes, certain_nodes, nodes_id, is_node_uncertain, def_args, inc_args, def_atts, inc_atts
 
 
@@ -64,14 +64,14 @@ def GetFeatures(num_nodes, certain_nodes, apxpath, device=device):
     raw_features = af_reader_py.compute_features(apxpath, 10000, 0.000001)
     if len(raw_features) != num_nodes:
         raw_features = FullFeatures(num_nodes, certain_nodes, raw_features)
-    features = StandardScaler().fit_transform(raw_features)  #normalisation des features
+    features = StandardScaler().fit_transform(raw_features)
     features = torch.tensor(features, dtype=torch.float32).to(device)
     return features
 
 
 def FullFeatures(num_nodes, certain_nodes, raw_features):
     """
-    Complète la liste de features de la completion MIN en rajoutant des 0 pour les noeuds manquants
+    Complete the feature list of the MIN completion by adding zeros for the missing nodes.
     """
     full_features = [[0]*11 for i in range(num_nodes)]
     for index, node_id in enumerate(certain_nodes):
