@@ -10,12 +10,12 @@ import time
 import ast
 import os
 
-IAF_root = "../Data/IAF_TestSet"
+IAF_root = "Data/IAF_TestSet"
 #sem = "ST"
 sem = "PR"
 #sem = "GR"
-modelroot = f"models/egat_f23_f1_{sem}.pth"
-taeydennae_root = "../taeydennae_linux_x86-64"
+modelroot = f"GNN/models/egat_f23_f1_{sem}.pth"
+taeydennae_root = "./taeydennae_linux_x86-64"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
