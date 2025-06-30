@@ -6,12 +6,15 @@ IAF_root = "Data/IAF_TrainSet"
 #IAF_root = "Data/IAF_TestSet"
 
 methods = [nx.erdos_renyi_graph, nx.watts_strogatz_graph, nx.barabasi_albert_graph]
-#nb_graphs = 5  #for the train set
-nb_graphs = 2  #for the test set
 nb_nodes = [10,20,30]  #number of nodes
 probs_ER = [0.1,0.3,0.5]  #probabilities for erdos renyi
 probs_WS = [0.1,0.3,0.5,0.7,0.9]  #probabilities for watts strogatz
 nb_edges_BA = [1,2,3]  #number of edges for barabasi albert
+
+if IAF_root == "Data/IAF_TrainSet":
+    nb_graphs = 5
+if IAF_root == "Data/IAF_TestSet":
+    nb_graphs = 2
 
 
 def GenerateSeveralIAF(method,nbn,variable):
