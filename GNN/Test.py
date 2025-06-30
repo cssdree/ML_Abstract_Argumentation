@@ -10,12 +10,12 @@ import time
 import ast
 import os
 
-IAF_root = "Data/IAF_TestSet"
+IAF_root = "../Data/IAF_TestSet"
 #sem = "ST"
 sem = "PR"
 #sem = "GR"
-modelroot = f"GNN/models/egat_f23_f1_{sem}.pth"
-taeydennae_root = "./taeydennae_linux_x86-64"
+modelroot = f"models/egat_f23_f1_{sem}.pth"
+taeydennae_root = "../taeydennae_linux_x86-64"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
@@ -73,7 +73,7 @@ def Statistics():
     NSA = {"name": "NSA", "VP": 0, "VN": 0, "FP": 0, "FN": 0}
     problems = [PCA, NCA, PSA, NSA]
     for txtfile in os.listdir(f"{IAF_root}/predictions"):
-        if txtfile.endswith(".txt"):
+        if txtfile.endswith(f"{sem}.txt"):
             filename = "_".join(os.path.splitext(txtfile)[0].split("_")[:-1])
             csvpath = f"{IAF_root}/labels/{filename}_{sem}.csv"
             num_nodes = int(filename.split("_")[1])
@@ -112,8 +112,8 @@ def Statistics():
 
 
 if __name__ == "__main__":
-    TimeWithTaeydennae()
-    model = EGAT(23, 1, 6, 6, 4, 1, heads=[5, 3, 3]).to(device)
-    model.load_state_dict(torch.load(modelroot, map_location=device))
-    TimeWithGNN(model)
+    #TimeWithTaeydennae()
+    #model = EGAT(23, 1, 6, 6, 4, 1, heads=[5, 3, 3]).to(device)
+    #model.load_state_dict(torch.load(modelroot, map_location=device))
+    #TimeWithGNN(model)
     Statistics()
