@@ -52,7 +52,7 @@ def CreateDGLGraphs(apxpath, device=device):
         is_node_uncertain = torch.tensor(is_node_uncertain, dtype=torch.float32).to(device)
         g = dgl.graph((torch.tensor(attackers), torch.tensor(attacked)), num_nodes=num_nodes).to(device)
         g = dgl.add_self_loop(g)
-        g.edata["is_uncertain"] = torch.tensor(is_edge_uncertain+[0]*num_nodes, dtype=torch.float32).unsqueeze(1)  #rajout des self loop
+        g.edata["is_uncertain"] = torch.tensor(is_edge_uncertain+[0]*num_nodes, dtype=torch.float32).unsqueeze(1).to(device)  #rajout des self loop
     return g, num_nodes, certain_nodes, is_node_uncertain, def_args, inc_args, def_atts, inc_atts
 
 
