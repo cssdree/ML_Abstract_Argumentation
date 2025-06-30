@@ -2,8 +2,8 @@ from Data.Graphs import Graphs
 import networkx as nx
 import os
 
-IAF_root = "Data/IAF_TrainSet"
-#IAF_root = "Data/IAF_TestSet"
+#IAF_root = "Data/IAF_TrainSet"
+IAF_root = "Data/IAF_TestSet"
 
 methods = [nx.erdos_renyi_graph, nx.watts_strogatz_graph, nx.barabasi_albert_graph]
 nb_nodes = [10,20,30]  #number of nodes

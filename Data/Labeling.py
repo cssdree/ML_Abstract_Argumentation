@@ -3,8 +3,8 @@ import subprocess
 import csv
 import os
 
-IAF_root = "Data/IAF_TrainSet"
-#IAF_root = "Data/IAF_TestSet"
+#IAF_root = "Data/IAF_TrainSet"
+IAF_root = "Data/IAF_TestSet"
 #sem = "ST"
 sem = "PR"
 #sem = "GR"
@@ -46,6 +46,8 @@ if __name__ == "__main__":
         futures = []
         for apxfile in os.listdir(IAF_root):
             if apxfile.endswith(".apx"):
+                if sem == "PR" and apxfile == "ER_30_0.3_0.2_att-inc_179.apx":
+                    continue
                 filename = os.path.splitext(apxfile)[0]
                 graphs_results[filename] = {}
                 certain_args = CertainsArgs(f"{IAF_root}/{filename}.apx")
