@@ -59,7 +59,7 @@ def TimeWithGNN(model):
                 f.write(f"{predictions}\n")
                 nb_graphs += 1
     end_time = time.time()
-    print(f"{nb_graphs} whole graphs took", end_time-start_time, "seconds with EGAT")
+    print(f"{nb_graphs} whole graphs took", end_time-start_time, "seconds with the GNN")
 
 
 def Statistics():

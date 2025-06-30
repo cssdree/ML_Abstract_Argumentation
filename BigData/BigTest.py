@@ -2,6 +2,7 @@ from BigData.BigDataset import CreateDGLGraphs
 from BigData.BigDataset import GetFeatures
 from Data.Graphs import CreateCompletions
 from GNN.Training import EGAT
+from pathlib import Path
 import subprocess
 import statistics
 import torch
@@ -9,14 +10,26 @@ import time
 import ast
 import os
 
-#IAF_root = "BigData/A-inc"
-IAF_root = "BigData/B-inc"
+#IAF_root = "A-inc"
+IAF_root = "B-inc"
 #sem = "ST"
-sem = "PR"
-#sem = "GR"
-modelroot = f"GNN/models/egat_f23_f1_{sem}.pth"
-taeydennae_root = "./taeydennae_linux_x86-64"
+#sem = "PR"
+sem = "GR"
+modelroot = f"../GNN/models/egat_f23_f1_{sem}.pth"
+taeydennae_root = "../taeydennae_linux_x86-64"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+if IAF_root == "A-inc":
+    errors = {"afinput_exp_cycles_indvary3_step8_batch_yyy07_15_arg_inc",
+              "afinput_exp_cycles_indvary3_step8_batch_yyy07_15_inc",
+              "massachusetts_srta_2014-11-13.gml.50_5_att_inc",
+              "massachusetts_vineyardfastferry_2015-11-13.gml.50_15_att_inc",
+              "massachusetts_vineyardfastferry_2015-11-13.gml.50_15_inc",
+              "massachusetts_vineyardfastferry_2015-11-13.gml.50_20_att_inc",
+              "massachusetts_vineyardfastferry_2015-11-13.gml.50_20_inc"}
+if IAF_root == "B-inc":
+    errors = {"massachusetts_blockislandferry_2015-11-13.gml.80_15_arg_inc",
+              "massachusetts_blockislandferry_2015-11-13.gml.80_15_inc"}
 
 
 def TestTaeydennae():
@@ -61,26 +74,21 @@ def TestTaeydennae():
 def TestGNN(model):
     os.makedirs("cache", exist_ok=True)
     os.makedirs(f"{IAF_root}/GNN_labels", exist_ok=True)
-    os.makedirs(f"{IAF_root}/GNN_labels/crash", exist_ok=True)
-    os.makedirs(f"{IAF_root}/GNN_labels/error", exist_ok=True)
-    for apxfile in os.listdir(f"{IAF_root}"):
+    os.makedirs(f"{IAF_root}/GNN_labels/crashs", exist_ok=True)
+    for apxfile in os.listdir(IAF_root):
         if apxfile.endswith(".apx"):
             filename = os.path.splitext(apxfile)[0]
             apxpath = f"{IAF_root}/{filename}.apx"
             argpath = f"{IAF_root}/{filename}.arg"
             labelpath = f"{IAF_root}/GNN_labels/{filename}_{sem}.txt"
-            crashpath = f"{IAF_root}/GNN_labels/crash/{filename}_{sem}_crash.txt"
-            errorpath = f"{IAF_root}/GNN_labels/error/{filename}_{sem}_error.txt"
-            if not os.path.exists(labelpath) and not os.path.exists(crashpath) and not os.path.exists(errorpath):
+            crashpath = f"{IAF_root}/GNN_labels/crashs/{filename}_crash.txt"
+            if not os.path.exists(labelpath) and not os.path.exists(crashpath) and filename not in errors:
                 print(filename)
                 with open(argpath, "r", encoding="utf-8") as f:
                     arg = f.readline().strip()
                 start_time = time.time()
                 graph, num_nodes, certain_nodes, nodes_id, is_node_uncertain, def_args, inc_args, def_atts, inc_atts = CreateDGLGraphs(apxpath)
                 len_def_atts_MIN = CreateCompletions(def_args, def_atts, inc_args, inc_atts,f"cache/{filename}.apx")
-                if len_def_atts_MIN == 0:
-                    open(errorpath, "w").close()
-                    continue
                 features_MAX = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MAX.apx")
                 features_MIN = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MIN.apx")
                 node_feats = torch.cat([is_node_uncertain.unsqueeze(1), features_MAX, features_MIN], dim=1)
@@ -95,25 +103,6 @@ def TestGNN(model):
                     f.write(f"{predictions_time}\n")
 
 
-def CountFiles(root):
-    count = 0
-    if root == f"{IAF_root}/GNN_labels" or root == f"{IAF_root}/taeydennae_labels":
-        for file in os.listdir(root):
-            if file.endswith(f"{sem}.txt"):
-                count += 1
-        return count
-    if root == f"{IAF_root}/GNN_labels/failed-{sem}":
-        for file in os.listdir(f"{root}/crash"):
-            count += 1
-        for file in os.listdir(f"{root}/error"):
-            count += 1
-        return count
-    if root == f"{IAF_root}/taeydennae_labels/timeouts-{sem}":
-        for file in os.listdir(root):
-            count += 1
-        return count
-
-
 def GlobalStatistics():
     VP = 0  #Vrai Positif : args acceptés qu'on a classé comme accepctés
     VN = 0  #Vrai Négatif : args rejetés qu'on a classé comme rejetés
@@ -123,13 +112,12 @@ def GlobalStatistics():
     GNN_time = 0
     taeydennae_median = []
     GNN_median = []
-    nb_graphs_predicted_GNN = CountFiles(f"{IAF_root}/GNN_labels")
-    nb_graphs_predicted_taey = CountFiles(f"{IAF_root}/taeydennae_labels")
-    nb_graphs_failed_GNN = CountFiles(f"{IAF_root}/GNN_labels/failed-{sem}")
-    nb_graphs_failed_taey = CountFiles(f"{IAF_root}/taeydennae_labels/timeouts-{sem}")
+    graphs_predicted_taey = 4550 - sum(1 for f in Path(f"{IAF_root}/taeydennae_labels/timeouts-{sem}").iterdir() if f.is_file())
+    graphs_predicted_gnn = 0
     for txtfile in os.listdir(f"{IAF_root}/GNN_labels"):
         if txtfile.endswith(f"{sem}.txt"):
             filename = "_".join(os.path.splitext(txtfile)[0].split("_")[:-1])
+            graphs_predicted_gnn += 1
             if os.path.exists(f"{IAF_root}/taeydennae_labels/timeouts-{sem}/{filename}_timeout.txt"):
                 taeydennae_prediction_time = 20
                 taeydennae_median.append(taeydennae_prediction_time)
@@ -157,22 +145,20 @@ def GlobalStatistics():
                         FN += 1
             taeydennae_time += taeydennae_prediction_time
             GNN_time += GNN_prediction_time
+    print(f"Graphs predicted by Taeydennae (less than 10 sec) : {graphs_predicted_taey}/4550")
+    print(f"Graphs predicted by the GNN (no crash or error) : {graphs_predicted_gnn}/4550")
+    print("")
+    print("Taeydennae average time :", taeydennae_time/graphs_predicted_taey)
+    print("Taeydennae median time :", statistics.median(taeydennae_median))
+    print("Taeydennae cumulative time :", taeydennae_time)
+    print("GNN average time :", GNN_time/graphs_predicted_gnn)
+    print("GNN median time :", statistics.median(GNN_median))
+    print("GNN cumulative time :", GNN_time)
+    print("")
     print("Accuracy :",(VP+VN)/(VP+VN+FP+FN))
     print("Precision :",VP/(VP+FP))
     print("Recall :",VP/(VP+FN))
     print("F1-score :",(2*VP)/(2*VP+FP+FN))
-    print("")
-    print("Taeydennae average time :", taeydennae_time/nb_graphs_predicted_taey)
-    print("Taeydennae median time :", statistics.median(taeydennae_median))
-    print("Taeydennae cumulative time :", taeydennae_time)
-    print("GNN average time :", GNN_time/nb_graphs_predicted_GNN)
-    print("GNN median time :", statistics.median(GNN_median))
-    print("GNN cumulative time :", GNN_time)
-    print("")
-    print("Graphs correctly predicted by the GNN :", nb_graphs_predicted_GNN)
-    print("Graphs failed by the GNN (error or crash) :", nb_graphs_failed_GNN)
-    print("Graphs correctly predicted by Taeydennae :", nb_graphs_predicted_taey)
-    print("Graphs failed by Taeydennae (timeout of 10 sec) :", nb_graphs_failed_taey)
     print("")
 
 
@@ -213,8 +199,8 @@ def DecisionProblemStatistics():
 
 if __name__ == "__main__":
     #TestTaeydennae()
-    model = EGAT(23, 1, 6, 6, 4, 1, heads=[5, 3, 3]).to(device)
-    model.load_state_dict(torch.load(modelroot, map_location=device))
-    TestGNN(model)
-    #GlobalStatistics()
-    #DecisionProblemStatistics()
+    #model = EGAT(23, 1, 6, 6, 4, 1, heads=[5, 3, 3]).to(device)
+    #model.load_state_dict(torch.load(modelroot, map_location=device))
+    #TestGNN(model)
+    GlobalStatistics()
+    DecisionProblemStatistics()
