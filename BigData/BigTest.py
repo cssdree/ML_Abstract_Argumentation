@@ -10,8 +10,8 @@ import time
 import ast
 import os
 
-IAF_root = "A-inc"
-#IAF_root = "B-inc"
+IAF_root = "BigData/A-inc"
+#IAF_root = "BigData/B-inc"
 #sem = "ST"
 sem = "PR"
 #sem = "GR"
