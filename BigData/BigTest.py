@@ -19,7 +19,7 @@ modelroot = f"GNN/models/egat_f23_f1_{sem}.pth"
 taeydennae_root = "./taeydennae_linux_x86-64"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-if IAF_root == "A-inc":
+if IAF_root == "BigData/A-inc":
     errors = {"afinput_exp_cycles_indvary3_step8_batch_yyy07_15_arg_inc",
               "afinput_exp_cycles_indvary3_step8_batch_yyy07_15_inc",
               "massachusetts_srta_2014-11-13.gml.50_5_att_inc",
@@ -27,7 +27,7 @@ if IAF_root == "A-inc":
               "massachusetts_vineyardfastferry_2015-11-13.gml.50_15_inc",
               "massachusetts_vineyardfastferry_2015-11-13.gml.50_20_att_inc",
               "massachusetts_vineyardfastferry_2015-11-13.gml.50_20_inc"}
-if IAF_root == "B-inc":
+if IAF_root == "BigData/B-inc":
     errors = {"massachusetts_blockislandferry_2015-11-13.gml.80_15_arg_inc",
               "massachusetts_blockislandferry_2015-11-13.gml.80_15_inc"}
 
