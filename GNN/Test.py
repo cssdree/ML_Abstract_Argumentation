@@ -44,6 +44,8 @@ def TimeWithGNN(model):
     start_time = time.time()
     for apxfile in os.listdir(IAF_root):
         if apxfile.endswith(".apx"):
+            if sem == "PR" and apxfile == "ER_30_0.3_0.2_att-inc_179.apx":
+                continue
             filename = os.path.splitext(apxfile)[0]
             apxpath = f"{IAF_root}/{filename}.apx"
             predictionpath = f"{IAF_root}/predictions/{filename}_{sem}.txt"
