@@ -10,7 +10,7 @@ pip install -r Data/requirements.txt
 pip install -r GNN/requirements.txt
 pip install -r BigData/requirements.txt
 ```
-4. Download the AFs from ICCMA 2017 and transform them into IAFs en utilisant le fichier `download_and_run_iaf_generator.sh` de ce projet/repository : [https://bitbucket.org/andreasniskanen/taeydennae/src/master/benchmarks/](https://bitbucket.org/andreasniskanen/taeydennae/src/master/benchmarks/)
+4. Download the AFs from ICCMA 2017 and transform them into IAFs using the `download_and_run_iaf_generator.sh` script from this repository : [https://bitbucket.org/andreasniskanen/taeydennae/src/master/benchmarks/](https://bitbucket.org/andreasniskanen/taeydennae/src/master/benchmarks/)
 
 ## Utilisation
 This project provides three main functions, organized into three directories.
