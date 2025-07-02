@@ -1,0 +1,15 @@
+--index-url https://pypi.org/simple
+numpy<2
+scikit-learn
+networkx
+psutil>=5.8.0
+pandas
+
+--extra-index-url https://download.pytorch.org/whl/cu121
+torch==2.1.0+cu121
+torchdata
+
+--find-links https://data.dgl.ai/wheels/torch-2.1/cu121/repo.html
+dgl==2.4.0
+
+
