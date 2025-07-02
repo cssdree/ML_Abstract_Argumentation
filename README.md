@@ -7,8 +7,14 @@ This project aims to generate neural models capable of determining the acceptabi
 3. Install the dependencies listed in the three requirements.txt files located in the Data, GNN, and BigData directories :
 ```bash
 pip install -r Data/requirements.txt
-pip install -r GNN/requirements.txt
-pip install -r BigData/requirements.txt
+```
+Depending on your computer hardware configuration :
+```bash
+pip install -r GNN/requirements-cpu.txt
+pip install -r BigData/requirements-cpu.txt
+
+pip install -r GNN/requirements-cuda.txt
+pip install -r BigData/requirements-cuda.txt
 ```
 4. Download the AFs from ICCMA 2017 and transform them into IAFs using the `download_and_run_iaf_generator.sh` script from this repository : [https://bitbucket.org/andreasniskanen/taeydennae/src/master/benchmarks/](https://bitbucket.org/andreasniskanen/taeydennae/src/master/benchmarks/)
 
