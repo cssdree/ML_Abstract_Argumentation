@@ -50,7 +50,7 @@ def TestTaeydennae():
                 start_time = time.time()
                 for task in ["PCA", "NCA", "PSA", "NSA"]:
                     try:
-                        prediction = subprocess.run([taeydennae_root, "-p", f"{task}-{sem}", "-f", apxpath, "-a", str(arg)], capture_output=True, text=True, timeout=10)
+                        prediction = subprocess.run([taeydennae_root, "-p", f"{task}-{sem}", "-f", apxpath, "-a", str(arg)], capture_output=True, text=True, timeout=60)
                         if prediction.returncode == 0 and "YES" in prediction.stdout:
                             predictions.append(1)
                         elif prediction.returncode == 0 and "NO" in prediction.stdout:
@@ -117,7 +117,7 @@ def GlobalStatistics():
             filename = "_".join(os.path.splitext(txtfile)[0].split("_")[:-1])
             graphs_predicted_gnn += 1
             if os.path.exists(f"{IAF_root}/taeydennae_labels/timeouts-{sem}/{filename}_timeout.txt"):
-                taeydennae_prediction_time = 20
+                taeydennae_prediction_time = 120
                 taeydennae_median.append(taeydennae_prediction_time)
                 with open(f"{IAF_root}/GNN_labels/{filename}_{sem}.txt", "r", encoding="utf-8") as f:
                     GNN_prediction = ast.literal_eval(f.readline().strip())
