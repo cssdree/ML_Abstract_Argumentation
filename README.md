@@ -1,4 +1,4 @@
-# Machine Learning for Formal Argumentation
+# Machine Learning for Abstract Argumentation
 This project aims to generate neural models capable of determining the acceptability of arguments within incomplete argumentation frameworks. These models are first trained and tested on a dataset generated as part of this project, and then evaluated on the dataset provided by ICCMA 2017.
 
 ## Installation
