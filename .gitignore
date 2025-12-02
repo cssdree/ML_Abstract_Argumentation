@@ -1,8 +1,7 @@
 .idea
-Data/.venv
+.venv
 Data/IAF_TrainSet
 Data/IAF_TestSet
-GNN/.venv
 BigData/A-inc
 BigData/B-inc
 BigData/ICCMA_2017
