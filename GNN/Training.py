@@ -1,6 +1,7 @@
 import torch.nn.functional as functional
 from GNN.Dataset import Dataset
 from dgl.nn import EGATConv
+from CONFIG import sem
 import torch.nn as nn
 import statistics
 import random
@@ -10,9 +11,6 @@ import dgl
 import os
 
 IAF_root = "Data/IAF_TrainSet"
-#sem = "ST"
-#sem = "PR"
-sem = "GR"
 modelroot = f"GNN/models/egat_f23_f1_{sem}.pth"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

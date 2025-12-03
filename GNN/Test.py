@@ -4,6 +4,7 @@ from Data.Labeling import CertainsArgs
 from GNN.Dataset import GetFeatures
 from GNN.Dataset import GetLabels
 from GNN.Training import EGAT
+from CONFIG import sem
 import subprocess
 import torch
 import time
@@ -11,9 +12,6 @@ import ast
 import os
 
 IAF_root = "Data/IAF_TestSet"
-#sem = "ST"
-sem = "PR"
-#sem = "GR"
 modelroot = f"GNN/models/egat_f23_f1_{sem}.pth"
 taeydennae_root = "./taeydennae_linux_x86-64"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
