@@ -1,19 +1,11 @@
 import networkx as nx
 import numpy as np
 import itertools
-import random
 
 nb_neighbors = 2  #number of neighbors with which each node is joined for watts strogatz
 prob_bi = 0.2  #probability that an edge is bidirectional
 probs_inc = [0.05,0.1,0.15,0.2]  #probabilities that an argument is uncertain
 id_counter = itertools.count(start=0)  #unique id of each graph
-
-seed_train = 123
-seed_test = 456
-#np.random.seed(seed_train)
-#random.seed(seed_train)
-np.random.seed(seed_test)
-random.seed(seed_test)
 
 
 def WriteApx(def_args, def_atts, inc_args, inc_atts, apxpath):

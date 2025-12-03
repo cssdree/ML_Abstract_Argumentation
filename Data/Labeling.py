@@ -1,13 +1,9 @@
+from CONFIG import IAF_root, sem
 import concurrent.futures
 import subprocess
 import csv
 import os
 
-#IAF_root = "Data/IAF_TrainSet"
-IAF_root = "Data/IAF_TestSet"
-#sem = "ST"
-sem = "PR"
-#sem = "GR"
 taeydennae_root = "./taeydennae_linux_x86-64"
 
 
