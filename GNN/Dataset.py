@@ -58,7 +58,7 @@ def CreateDGLGraphs(apxpath, device=device):
 
 def GetFeatures(num_nodes, certain_nodes, apxpath, ptpath, device=device):
     if os.path.exists(ptpath):
-        raw_features = torch.load(ptpath, map_location="cpu").numpy()
+        raw_features = torch.load(ptpath, map_location="cpu", weights_only=True).numpy()
         features = StandardScaler().fit_transform(raw_features)
         features = torch.tensor(features, dtype=torch.float32).to(device)
     else:

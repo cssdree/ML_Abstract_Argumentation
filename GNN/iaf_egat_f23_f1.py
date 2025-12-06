@@ -9,6 +9,7 @@ import os
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
+
 def GetAcceptability(model, apxpath, problem, argID):
     model.eval()
     filename = os.path.splitext(os.path.basename(apxpath))[0]
