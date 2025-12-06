@@ -10,7 +10,6 @@ import re
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
-
 def CreateDGLGraphs(apxpath, device=device):
     num_nodes = int(os.path.basename(apxpath).split("_")[1])
     attackers = []
