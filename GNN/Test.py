@@ -12,7 +12,7 @@ import ast
 import os
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-in_node = 23 if completion == "MIN_MAX" else 12
+in_node = 23 if completion == "MINMAX" else 12
 
 IAF_root = "Data/IAF_TestSet"
 model_root = f"GNN/models/egat_f{in_node}_f1_{sem}_{completion}.pth"
@@ -48,7 +48,7 @@ def TimeWithGNN(model):
                 continue
             filename = os.path.splitext(apxfile)[0]
             apxpath = f"{IAF_root}/{filename}.apx"
-            predictionpath = f"{IAF_root}/predictions/{filename}_{sem}.txt"
+            predictionpath = f"{IAF_root}/predictions/{filename}_{sem}_{completion}.txt"
             graph, num_nodes, certain_nodes, is_node_uncertain, def_args, inc_args, def_atts, inc_atts = CreateDGLGraphs(apxpath)
             if completion == "MIN":
                 len_def_atts_MIN = CreateCompletion("MIN", def_args, def_atts, inc_args, inc_atts, f"cache/{filename}.apx")
@@ -59,7 +59,7 @@ def TimeWithGNN(model):
                 features_MAX = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MAX.apx", f"cache/{filename}_MAX.pt")
                 node_feats = torch.cat([is_node_uncertain.unsqueeze(1), features_MAX], dim=1)
             else:
-                len_def_atts_MIN = CreateCompletion("MIN_MAX", def_args, def_atts, inc_args, inc_atts, f"cache/{filename}.apx")
+                len_def_atts_MIN = CreateCompletion("MINMAX", def_args, def_atts, inc_args, inc_atts, f"cache/{filename}.apx")
                 features_MAX = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MAX.apx",f"cache/{filename}_MAX.pt")
                 features_MIN = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MIN.apx",f"cache/{filename}_MIN.pt")
                 node_feats = torch.cat([is_node_uncertain.unsqueeze(1), features_MAX, features_MIN], dim=1)
@@ -84,12 +84,12 @@ def Statistics():
     NSA = {"name": "NSA", "VP": 0, "VN": 0, "FP": 0, "FN": 0}
     problems = [PCA, NCA, PSA, NSA]
     for txtfile in os.listdir(f"{IAF_root}/predictions"):
-        if txtfile.endswith(f"{sem}.txt"):
-            filename = "_".join(os.path.splitext(txtfile)[0].split("_")[:-1])
+        if txtfile.endswith(f"{sem}_{completion}.txt"):
+            filename = "_".join(os.path.splitext(txtfile)[0].split("_")[:-2])
             csvpath = f"{IAF_root}/labels/{filename}_{sem}.csv"
             num_nodes = int(filename.split("_")[1])
             labels = GetLabels(num_nodes, csvpath, device).tolist()
-            with open(f"{IAF_root}/predictions/{filename}_{sem}.txt", "r", encoding="utf-8") as f:
+            with open(f"{IAF_root}/predictions/{filename}_{sem}_{completion}.txt", "r", encoding="utf-8") as f:
                 predictions = ast.literal_eval(f.readline().strip())
             for l_list, p_list in zip(labels, predictions):
                 problem_id = 0
@@ -125,6 +125,6 @@ def Statistics():
 if __name__ == "__main__":
     #TimeWithTaeydennae()
     model = EGAT(23, 1, 6, 6, 4, 1, heads=[5, 3, 3]).to(device)
-    model.load_state_dict(torch.load(model_root, map_location=device))
+    model.load_state_dict(torch.load(model_root, map_location=device, weights_only=True))
     TimeWithGNN(model)
     Statistics()

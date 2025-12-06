@@ -118,7 +118,7 @@ class Graphs:
     def Export(self, p_inc, inc_type, def_args, def_atts, inc_args, inc_atts):
         filename = self.CreateFilename(p_inc, inc_type)
         WriteApx(def_args, def_atts, inc_args, inc_atts, f"{self.IAF_root}/{filename}.apx")
-        len_def_atts_MIN = CreateCompletion("MIN_MAX", def_args, def_atts, inc_args, inc_atts, f"{self.IAF_root}/completions/{filename}.apx")
+        len_def_atts_MIN = CreateCompletion("MINMAX", def_args, def_atts, inc_args, inc_atts, f"{self.IAF_root}/completions/{filename}.apx")
 
     def CreateFilename(self, p_inc, inc_type):
         methods = {nx.erdos_renyi_graph: "ER", nx.watts_strogatz_graph: "WS", nx.barabasi_albert_graph: "BA"}

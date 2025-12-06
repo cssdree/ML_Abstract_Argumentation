@@ -11,7 +11,7 @@ import dgl
 import os
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-in_node = 23 if completion == "MIN_MAX" else 12
+in_node = 23 if completion == "MINMAX" else 12
 
 IAF_root = "Data/IAF_TrainSet"
 model_root = f"GNN/models/egat_f{in_node}_f1_{sem}_{completion}.pth"
