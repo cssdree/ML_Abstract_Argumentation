@@ -1,20 +1,22 @@
-from GNN.iaf_egat_f23_f1 import CreateCompletions
+from Data.Graphs import CreateCompletion
 from GNN.Dataset import CreateDGLGraphs
 from Data.Labeling import CertainsArgs
 from GNN.Dataset import GetFeatures
+from CONFIG import sem, completion
 from GNN.Dataset import GetLabels
 from GNN.Training import EGAT
-from CONFIG import sem
 import subprocess
 import torch
 import time
 import ast
 import os
 
-IAF_root = "Data/IAF_TestSet"
-modelroot = f"GNN/models/egat_f23_f1_{sem}.pth"
-taeydennae_root = "./taeydennae_linux_x86-64"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+in_node = 23 if completion == "MIN_MAX" else 12
+
+IAF_root = "Data/IAF_TestSet"
+model_root = f"GNN/models/egat_f{in_node}_f1_{sem}_{completion}.pth"
+taeydennae_root = "./taeydennae_linux_x86-64"
 
 
 def TimeWithTaeydennae():
@@ -48,10 +50,19 @@ def TimeWithGNN(model):
             apxpath = f"{IAF_root}/{filename}.apx"
             predictionpath = f"{IAF_root}/predictions/{filename}_{sem}.txt"
             graph, num_nodes, certain_nodes, is_node_uncertain, def_args, inc_args, def_atts, inc_atts = CreateDGLGraphs(apxpath)
-            len_def_atts_MIN = CreateCompletions(def_args, def_atts, inc_args, inc_atts, f"cache/{filename}.apx")
-            features_MAX = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MAX.apx",f"cache/{filename}_MAX.pt")
-            features_MIN = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MIN.apx",f"cache/{filename}_MIN.pt")
-            node_feats = torch.cat([is_node_uncertain.unsqueeze(1), features_MAX, features_MIN], dim=1)
+            if completion == "MIN":
+                len_def_atts_MIN = CreateCompletion("MIN", def_args, def_atts, inc_args, inc_atts, f"cache/{filename}.apx")
+                features_MIN = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MIN.apx", f"cache/{filename}_MIN.pt")
+                node_feats = torch.cat([is_node_uncertain.unsqueeze(1), features_MIN], dim=1)
+            elif completion == "MAX":
+                len_def_atts_MIN = CreateCompletion("MAX", def_args, def_atts, inc_args, inc_atts, f"cache/{filename}.apx")
+                features_MAX = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MAX.apx", f"cache/{filename}_MAX.pt")
+                node_feats = torch.cat([is_node_uncertain.unsqueeze(1), features_MAX], dim=1)
+            else:
+                len_def_atts_MIN = CreateCompletion("MIN_MAX", def_args, def_atts, inc_args, inc_atts, f"cache/{filename}.apx")
+                features_MAX = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MAX.apx",f"cache/{filename}_MAX.pt")
+                features_MIN = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MIN.apx",f"cache/{filename}_MIN.pt")
+                node_feats = torch.cat([is_node_uncertain.unsqueeze(1), features_MAX, features_MIN], dim=1)
             with torch.no_grad():
                 node_out, edge_out = model(graph, node_feats, graph.edata["is_uncertain"])
                 predictions = (torch.sigmoid(node_out) > 0.5).int().tolist()
@@ -112,8 +123,8 @@ def Statistics():
 
 
 if __name__ == "__main__":
-    TimeWithTaeydennae()
+    #TimeWithTaeydennae()
     model = EGAT(23, 1, 6, 6, 4, 1, heads=[5, 3, 3]).to(device)
-    model.load_state_dict(torch.load(modelroot, map_location=device))
+    model.load_state_dict(torch.load(model_root, map_location=device))
     TimeWithGNN(model)
     Statistics()
