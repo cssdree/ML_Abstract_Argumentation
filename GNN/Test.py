@@ -50,16 +50,14 @@ def TimeWithGNN(model):
             apxpath = f"{IAF_root}/{filename}.apx"
             predictionpath = f"{IAF_root}/predictions/{filename}_{sem}_{completion}.txt"
             graph, num_nodes, certain_nodes, is_node_uncertain, def_args, inc_args, def_atts, inc_atts = CreateDGLGraphs(apxpath)
+            CreateCompletion(completion, def_args, def_atts, inc_args, inc_atts, f"cache/{filename}.apx")
             if completion == "MIN":
-                len_def_atts_MIN = CreateCompletion("MIN", def_args, def_atts, inc_args, inc_atts, f"cache/{filename}.apx")
                 features_MIN = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MIN.apx", f"cache/{filename}_MIN.pt")
                 node_feats = torch.cat([is_node_uncertain.unsqueeze(1), features_MIN], dim=1)
             elif completion == "MAX":
-                len_def_atts_MIN = CreateCompletion("MAX", def_args, def_atts, inc_args, inc_atts, f"cache/{filename}.apx")
                 features_MAX = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MAX.apx", f"cache/{filename}_MAX.pt")
                 node_feats = torch.cat([is_node_uncertain.unsqueeze(1), features_MAX], dim=1)
             else:
-                len_def_atts_MIN = CreateCompletion("MINMAX", def_args, def_atts, inc_args, inc_atts, f"cache/{filename}.apx")
                 features_MAX = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MAX.apx",f"cache/{filename}_MAX.pt")
                 features_MIN = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MIN.apx",f"cache/{filename}_MIN.pt")
                 node_feats = torch.cat([is_node_uncertain.unsqueeze(1), features_MAX, features_MIN], dim=1)

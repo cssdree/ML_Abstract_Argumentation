@@ -26,18 +26,15 @@ def CreateCompletion(completion, def_args, def_atts, inc_args, inc_atts, apxpath
         filepath_MIN = apxpath.replace(".apx", "_MIN.apx")
         def_atts_MIN = GetMINCompletionAttacks(def_atts, inc_args)
         WriteApx(def_args, def_atts_MIN, [], [], filepath_MIN)
-        return len(def_atts_MIN)
     elif completion == "MAX":
         filepath_MAX = apxpath.replace(".apx", "_MAX.apx")
         WriteApx(def_args+inc_args, def_atts+inc_atts, [], [], filepath_MAX)
-        return None
     else:
         filepath_MIN = apxpath.replace(".apx", "_MIN.apx")
         filepath_MAX = apxpath.replace(".apx", "_MAX.apx")
         def_atts_MIN = GetMINCompletionAttacks(def_atts, inc_args)
         WriteApx(def_args, def_atts_MIN, [], [], filepath_MIN)
         WriteApx(def_args + inc_args, def_atts + inc_atts, [], [], filepath_MAX)
-        return len(def_atts_MIN)
 
 
 def GetMINCompletionAttacks(def_atts, inc_args):
@@ -118,7 +115,7 @@ class Graphs:
     def Export(self, p_inc, inc_type, def_args, def_atts, inc_args, inc_atts):
         filename = self.CreateFilename(p_inc, inc_type)
         WriteApx(def_args, def_atts, inc_args, inc_atts, f"{self.IAF_root}/{filename}.apx")
-        len_def_atts_MIN = CreateCompletion("MINMAX", def_args, def_atts, inc_args, inc_atts, f"{self.IAF_root}/completions/{filename}.apx")
+        CreateCompletion("MINMAX", def_args, def_atts, inc_args, inc_atts, f"{self.IAF_root}/completions/{filename}.apx")
 
     def CreateFilename(self, p_inc, inc_type):
         methods = {nx.erdos_renyi_graph: "ER", nx.watts_strogatz_graph: "WS", nx.barabasi_albert_graph: "BA"}
