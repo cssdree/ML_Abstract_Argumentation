@@ -77,11 +77,6 @@ class Graphs:
                 diG.add_edge(v,u)
         return diG
 
-    def CreateFilename(self, p_inc, inc_type):
-        methods = {nx.erdos_renyi_graph: "ER", nx.watts_strogatz_graph: "WS", nx.barabasi_albert_graph: "BA"}
-        id = next(id_counter)
-        return f"{methods[self.method]}_{self.nbn}_{self.var}_{p_inc}_{inc_type}_{id}"
-
     def MakeIncomplet(self):
         """
         Transform an AF into an IAF
@@ -114,3 +109,8 @@ class Graphs:
         filename = self.CreateFilename(p_inc, inc_type)
         WriteApx(def_args, def_atts, inc_args, inc_atts, f"{self.IAF_root}/{filename}.apx")
         len_def_atts_MIN = CreateCompletions(def_args, def_atts, inc_args, inc_atts, f"{self.IAF_root}/completions/{filename}.apx")
+
+    def CreateFilename(self, p_inc, inc_type):
+        methods = {nx.erdos_renyi_graph: "ER", nx.watts_strogatz_graph: "WS", nx.barabasi_albert_graph: "BA"}
+        id = next(id_counter)
+        return f"{methods[self.method]}_{self.nbn}_{self.var}_{p_inc}_{inc_type}_{id}"

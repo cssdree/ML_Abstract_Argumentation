@@ -7,7 +7,20 @@ import os
 taeydennae_root = "./taeydennae_linux_x86-64"
 
 
-def Task(filename, sem, arg, problem):
+def CertainsArgs(apxpath):
+    """
+    Return all the arguments of a file that are not uncertains
+    """
+    certain_args = set()
+    with open(apxpath, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line.startswith('arg(') and line.endswith(').'):
+                certain_args.add(line[4:-2])
+    return certain_args
+
+
+def Task(filename, arg, problem):
     result = subprocess.run(
         [taeydennae_root, "-p", f"{problem}-{sem}", "-f", f"{IAF_root}/{filename}.apx", "-a", str(arg)],
         capture_output=True,
@@ -20,19 +33,6 @@ def Task(filename, sem, arg, problem):
     else:
         print(f"Error : {filename}, problem={problem}, sem={sem}, arg={arg}, result={result.stdout}")
         return filename, arg, problem, 2
-
-
-def CertainsArgs(apxpath):
-    """
-    Return all the arguments of a file that are not uncertains
-    """
-    certain_args = set()
-    with open(apxpath, "r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if line.startswith('arg(') and line.endswith(').'):
-                certain_args.add(line[4:-2])
-    return certain_args
 
 
 if __name__ == "__main__":
@@ -51,7 +51,7 @@ if __name__ == "__main__":
                     graphs_results[filename][arg] = {}
                     decision_problems = ["PCA", "NCA", "PSA", "NSA"]
                     for problem in decision_problems:
-                        futures.append(executor.submit(Task, filename, sem, arg, problem))
+                        futures.append(executor.submit(Task, filename, arg, problem))
         for future in concurrent.futures.as_completed(futures):
             filename, arg, problem, result = future.result()
             graphs_results[filename][arg][problem] = result
