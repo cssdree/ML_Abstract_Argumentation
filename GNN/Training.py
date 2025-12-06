@@ -1,7 +1,7 @@
 import torch.nn.functional as functional
+from CONFIG import sem, completion
 from GNN.Dataset import Dataset
 from dgl.nn import EGATConv
-from CONFIG import sem
 import torch.nn as nn
 import statistics
 import random
@@ -10,9 +10,15 @@ import numpy
 import dgl
 import os
 
-IAF_root = "Data/IAF_TrainSet"
-modelroot = f"GNN/models/egat_f23_f1_{sem}.pth"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+if completion == "MIN_MAX":
+    in_node = 23
+elif completion == "MIN" or completion == "MAX":
+    in_node = 12
+
+IAF_root = "Data/IAF_TrainSet"
+model_root = f"GNN/models/egat_f{in_node}_f1_{sem}_{completion}.pth"
 
 seed = 666
 torch.manual_seed(seed)
@@ -22,12 +28,12 @@ dgl.random.seed(seed)
 
 
 class EGAT(nn.Module):
-    def __init__(self,in_node,in_edge,hidden_node,hidden_edge,out_node,out_edge,heads):
+    def __init__(self, in_node, in_edge, hidden_node, hidden_edge, out_node, out_edge, heads):
         super().__init__()
         self.egat_layers = nn.ModuleList()
-        self.egat_layers.append(EGATConv(in_node,in_edge,hidden_node,hidden_edge,heads[0]))
-        self.egat_layers.append(EGATConv(hidden_node*heads[0],hidden_edge*heads[0],hidden_node,hidden_edge,heads[1]))
-        self.egat_layers.append(EGATConv(hidden_node*heads[1],hidden_edge*heads[1], out_node, out_edge, heads[2]))
+        self.egat_layers.append(EGATConv(in_node, in_edge, hidden_node, hidden_edge, heads[0]))
+        self.egat_layers.append(EGATConv(hidden_node*heads[0], hidden_edge*heads[0], hidden_node, hidden_edge, heads[1]))
+        self.egat_layers.append(EGATConv(hidden_node*heads[1], hidden_edge*heads[1], out_node, out_edge, heads[2]))
 
     def forward(self, g, node_feats, edge_feats):
         n = node_feats
@@ -46,14 +52,14 @@ class EGAT(nn.Module):
 
 if __name__ == "__main__":
     os.makedirs("GNN/models", exist_ok=True)
-    model = EGAT(23, 1, 6, 6, 4, 1, heads=[5, 3, 3]).to(device)
+    model = EGAT(in_node, 1, 6, 6, 4, 1, heads=[5, 3, 3]).to(device)
     loss = nn.BCELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
     total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"Total number of trainable parameters : {total_params}")
 
     print("Loading Data...")
-    iaf_dataset = Dataset(IAF_root, sem, device=device)
+    iaf_dataset = Dataset(IAF_root, sem, completion, device=device)
     generator = torch.Generator().manual_seed(seed)
     data_loader = dgl.dataloading.GraphDataLoader(iaf_dataset, batch_size=8, shuffle=True)
 
@@ -82,4 +88,4 @@ if __name__ == "__main__":
             for g in optimizer.param_groups:
                 g['lr'] = 0.001
         print("Batchs :", batch_count, "Epoch : ", epoch," Mean : " , statistics.fmean(tot_loss), " Median : ", statistics.median(tot_loss), "Sum loss : ", sum_tot_loss)
-    torch.save(model.state_dict(), modelroot)
+    torch.save(model.state_dict(), model_root)

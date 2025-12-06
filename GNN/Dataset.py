@@ -77,7 +77,7 @@ def FullFeatures(num_nodes, certain_nodes, raw_features):
     """
     full_features = [[0]*11 for i in range(num_nodes)]
     for index, node_id in enumerate(certain_nodes):
-        for j in range(11): ### CACA ICI AVEC LE 11 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        for j in range(11):
             full_features[node_id][j] = raw_features[index][j]
     return full_features
 
@@ -96,12 +96,13 @@ def GetLabels(num_nodes, csvpath, device=device):
 
 
 class Dataset(DGLDataset):
-    def __init__(self, IAF_root, sem, device=device):
+    def __init__(self, IAF_root, sem, completion, device=device):
         self.IAF_root = IAF_root
         self.completions_root = f"{self.IAF_root}/completions"
         self.label_root = f"{self.IAF_root}/labels"
         self.features_root = f"{self.IAF_root}/features"
         self.sem = sem
+        self.completion = completion
         self.device = device
         super().__init__(name="Dataset")
 
@@ -112,11 +113,14 @@ class Dataset(DGLDataset):
             if apxfile.endswith(".apx"):
                 filename = os.path.splitext(apxfile)[0]
                 graph, num_nodes, certain_nodes, is_node_uncertain, def_args, inc_args, def_atts, inc_atts = CreateDGLGraphs(f"{self.IAF_root}/{filename}.apx")
-                ### METTRE UN IF ICI POUR GERER LES COMPLETIONS MIN ET MAX !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                features_MAX = GetFeatures(num_nodes, certain_nodes, f"{self.completions_root}/{filename}_MAX.apx", f"{self.features_root}/{filename}_MAX.pt")
-                features_MIN = GetFeatures(num_nodes, certain_nodes, f"{self.completions_root}/{filename}_MIN.apx", f"{self.features_root}/{filename}_MIN.pt")
-                features = torch.cat([is_node_uncertain.unsqueeze(1), features_MAX, features_MIN], dim=1)
-                ### FIN DE LA MODIFICATION !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                features_MAX = GetFeatures(num_nodes, certain_nodes, f"{self.completions_root}/{filename}_MAX.apx",f"{self.features_root}/{filename}_MAX.pt")
+                features_MIN = GetFeatures(num_nodes, certain_nodes, f"{self.completions_root}/{filename}_MIN.apx",f"{self.features_root}/{filename}_MIN.pt")
+                if self.completion == "MIN":
+                    features = torch.cat([is_node_uncertain.unsqueeze(1), features_MIN], dim=1)
+                elif self.completion == "MAX":
+                    features = torch.cat([is_node_uncertain.unsqueeze(1), features_MAX], dim=1)
+                else:
+                    features = torch.cat([is_node_uncertain.unsqueeze(1), features_MAX, features_MIN], dim=1)
                 label = GetLabels(num_nodes, f"{self.label_root}/{filename}_{self.sem}.csv")
                 mask = ~torch.isnan(label).any(dim=1)  #nodes with all labels marked as valid
                 graph.ndata["feat"] = features
