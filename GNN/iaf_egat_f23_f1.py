@@ -58,5 +58,5 @@ if __name__ == "__main__":
     sem = task.split("-")[1]
     completion = task.split("-")[2]
     model = EGAT(23, 1, 6, 6, 4, 1, heads=[5, 3, 3]).to(device)
-    model.load_state_dict(torch.load(f"GNN/models/egat_f23_f1_{sem}_{completion}.pth", map_location=device))
+    model.load_state_dict(torch.load(f"GNN/models/egat_f23_f1_{sem}_{completion}.pth", map_location=device, weights_only=True))
     print(GetAcceptability(model, apxpath, problem, argID))
