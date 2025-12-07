@@ -121,8 +121,8 @@ def Statistics():
 
 
 if __name__ == "__main__":
-    #TimeWithTaeydennae()
-    model = EGAT(23, 1, 6, 6, 4, 1, heads=[5, 3, 3]).to(device)
+    TimeWithTaeydennae()
+    model = EGAT(in_node, 1, 6, 6, 4, 1, heads=[5, 3, 3]).to(device)
     model.load_state_dict(torch.load(model_root, map_location=device, weights_only=True))
     TimeWithGNN(model)
     Statistics()
