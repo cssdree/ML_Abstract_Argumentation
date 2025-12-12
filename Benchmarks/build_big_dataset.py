@@ -13,7 +13,7 @@ ROOT = Path("Benchmarks")
 AF_TO_APX_SCRIPT = ROOT/'af_to_apx.py'
 AF_TO_IAF_SCRIPT = ROOT/'af_to_iaf.py'
 
-source_directory_temp = "iccma2023_benchmarks"
+source_directory_temp = "benchmarks"
 source_directory = "main"
 converted_apx_directory = "ICCMA2023-apx"
 output_directory = "ICCMA2023-inc"
@@ -86,6 +86,17 @@ def ConvertAfToApx():
     print(f"Converted {file_count} .af files to .apx")
 
 
+def CopyArgFiles():
+    print("\n--- Copying .arg files ---")
+    input_path = ROOT/source_directory
+    output_path = ROOT/converted_apx_directory
+    file_count = 0
+    for arg_file in input_path.glob("*.arg"):
+        shutil.copy(arg_file, output_path / arg_file.name)
+        file_count += 1
+    print(f"Copied {file_count} .arg files from {source_directory} to {converted_apx_directory}.")
+
+
 def ConvertAfToIaf():
     if not AF_TO_IAF_SCRIPT.exists():
         print(f"ERROR: Generation script not found at {AF_TO_IAF_SCRIPT}")
@@ -113,6 +124,7 @@ def Cleanup():
 if __name__ == "__main__":
     DownloadAndExtract()
     ConvertAfToApx()
+    CopyArgFiles()
     ConvertAfToIaf()
     Cleanup()
     print("\n\nPROCESS COMPLETE")

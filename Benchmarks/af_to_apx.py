@@ -13,21 +13,26 @@ arguments = []
 attacks = []
 
 for line in lines:
-    if line[0] != "#":
-        if line[0] == "p":
-            splitting = line.split()
-            if splitting[1] != "af":
-                print("ERROR: The file is not the specification of an AF")
-                sys.exit()
-            nb_args = int(splitting[2])
-            arguments = [i+1 for i in range(nb_args)]
+    line = line.strip()
+    if not line or line.startswith("#"):
+        continue
+    if line.startswith("p"):
+        splitting = line.split()
+        if splitting[1] != "af":
+            print("ERROR: The file is not the specification of an AF")
+            sys.exit()
+        nb_args = int(splitting[2])
+        arguments = [i+1 for i in range(nb_args)]
+    else:
+        if len(arguments) == 0:
+            print("ERROR: Missing specification of the number of arguments")
+            sys.exit()
         else:
-            if len(arguments) == 0:
-                print("ERROR: Missing specification of the number of arguments")
-                sys.exit()
-            else:
-                splitting = line.split()
-                attacks.append([int(splitting[0]),int(splitting[1])])
+            splitting = line.split()
+            if len(splitting) != 2:
+                print(f"WARNING: Skipping unrecognised line in {filename}: {line}", file=sys.stderr)
+                continue
+            attacks.append([int(splitting[0]),int(splitting[1])])
 
 for argument in arguments:
     print(f"arg({argument}).")
