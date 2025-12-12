@@ -102,8 +102,8 @@ def ConvertAfToIaf():
         print(f"ERROR: Generation script not found at {AF_TO_IAF_SCRIPT}")
         sys.exit(1)
 
-    input_path = ROOT / converted_apx_directory
-    output_path = ROOT / output_directory
+    input_path = ROOT/converted_apx_directory
+    output_path = ROOT/output_directory
     output_path.mkdir(parents=True, exist_ok=True)
 
     command = ["python3", AF_TO_IAF_SCRIPT, str(input_path), str(output_path)]

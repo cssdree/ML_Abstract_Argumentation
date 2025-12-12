@@ -5,7 +5,7 @@ import numpy as np
 
 original_instance_folder = sys.argv[1] #source folder for AFs
 generated_instance_folder = sys.argv[2] #output folder for IAFs
-probs = [0.05, 0.1, 0.15, 0.2] #probabilities that an argument is uncertain
+probs = [0, 0.05, 0.1, 0.15, 0.2] #probabilities that an argument is uncertain
 
 seed = 12122025
 np.random.seed(seed)
@@ -28,6 +28,19 @@ for file in os.listdir(original_instance_folder):
 		args = [line for line in lines if line.startswith("arg")]
 		atts = [line for line in lines if line.startswith("att")]
 		for p in probs:
+			if p == 0:
+				filename = file.replace(".apx", "") + "_" + str(int(100 * p)) + "_inc.apx"
+				out = open(generated_instance_folder + "/" + filename, "w")
+				for arg in args:
+					out.write(arg + "\n")
+				for att in atts:
+					out.write(att + "\n")
+				out.close()
+				qout = open(generated_instance_folder + "/" + filename.replace(".apx", ".arg"), "w")
+				qout.write(q)
+				qout.close()
+				continue
+
 			inc_args = []
 			inc_atts = []
 			def_args = []
