@@ -6,14 +6,15 @@ import shutil
 import sys
 import os
 
-ICCMA2023 = "https://zenodo.org/record/8348039/files/ICCMA2023_main.zip?download=1"
-ARCHIVE = "ICCMA2023_main.zip"
-ROOT = Path("Benchmark")
+ICCMA2023 = "https://zenodo.org/record/8348039/files/iccma2023_benchmarks.zip?download=1"
+ARCHIVE = "iccma2023_benchmarks.zip"
+ROOT = Path("Benchmarks")
 
 AF_TO_APX_SCRIPT = ROOT/'af_to_apx.py'
 AF_TO_IAF_SCRIPT = ROOT/'af_to_iaf.py'
 
-source_directory = "ICCMA2023_main"
+source_directory_temp = "iccma2023_benchmarks"
+source_directory = "main"
 converted_apx_directory = "ICCMA2023-apx"
 output_directory = "ICCMA2023-inc"
 
@@ -31,8 +32,7 @@ def RunCommand(command, step_name):
 
 
 def DownloadAndExtract():
-    archive_path = ROOT / ARCHIVE
-
+    archive_path = ROOT/ARCHIVE
     if not archive_path.exists():
         print(f"Downloading {archive_path}...")
         try:
@@ -52,6 +52,18 @@ def DownloadAndExtract():
     except Exception as e:
         print(f"Extraction failed : {e}")
         sys.exit(1)
+
+    source_path_final = ROOT/source_directory
+    source_path_temp = ROOT/source_directory_temp
+    main_folder_in_zip = source_path_temp/source_directory
+    if main_folder_in_zip.exists():
+        shutil.move(main_folder_in_zip, source_path_final)
+        print(f"Moved {source_directory} to {source_path_final}")
+    else:
+        print(f"ERROR: Could not find {source_directory} inside extracted archive")
+        sys.exit(1)
+    if source_path_temp.exists():
+        shutil.rmtree(source_path_temp)
 
 
 def ConvertAfToApx():
@@ -89,12 +101,12 @@ def ConvertAfToIaf():
 
 def Cleanup():
     print("\n--- Cleaning up ---")
-    if (ROOT / ARCHIVE).exists():
-        os.remove(ROOT / ARCHIVE)
-    if (ROOT / source_directory).exists():
-        shutil.rmtree(ROOT / source_directory)
-    if (ROOT / converted_apx_directory).exists():
-        shutil.rmtree(ROOT / converted_apx_directory)
+    if (ROOT/ARCHIVE).exists():
+        os.remove(ROOT/ARCHIVE)
+    if (ROOT/source_directory).exists():
+        shutil.rmtree(ROOT/source_directory)
+    if (ROOT/converted_apx_directory).exists():
+        shutil.rmtree(ROOT/converted_apx_directory)
     print("Cleanup complete")
 
 
