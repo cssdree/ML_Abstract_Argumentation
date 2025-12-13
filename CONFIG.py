@@ -1,5 +1,6 @@
-IAF_root = "Data/IAF_TrainSet"
+#IAF_root = "Data/IAF_TrainSet"
 #IAF_root = "Data/IAF_TestSet"
+IAF_root = "Benchmarks/ICCMA2023-inc"
 
 sem = "ST"
 #sem = "PR"
