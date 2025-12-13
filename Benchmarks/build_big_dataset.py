@@ -33,6 +33,7 @@ def RunCommand(command, step_name):
 
 def DownloadAndExtract():
     archive_path = ROOT/ARCHIVE
+
     if not archive_path.exists():
         print(f"Downloading {archive_path}...")
         try:
@@ -53,17 +54,18 @@ def DownloadAndExtract():
         print(f"Extraction failed : {e}")
         sys.exit(1)
 
-    source_path_final = ROOT/source_directory
+
+def SelectingMainFolder():
     source_path_temp = ROOT/source_directory_temp
+    source_path = ROOT/source_directory
     main_folder_in_zip = source_path_temp/source_directory
+
     if main_folder_in_zip.exists():
-        shutil.move(main_folder_in_zip, source_path_final)
-        print(f"Moved {source_directory} to {source_path_final}")
+        shutil.move(main_folder_in_zip, source_path)
+        print(f"Moved {main_folder_in_zip} to {source_path}")
     else:
         print(f"ERROR: Could not find {source_directory} inside extracted archive")
         sys.exit(1)
-    if source_path_temp.exists():
-        shutil.rmtree(source_path_temp)
 
 
 def ConvertAfToApx():
@@ -71,13 +73,13 @@ def ConvertAfToApx():
         print(f"ERROR: Conversion script not found at {AF_TO_APX_SCRIPT}")
         sys.exit(1)
 
-    input_path = ROOT / source_directory
-    output_path = ROOT / converted_apx_directory
+    source_path = ROOT/source_directory
+    output_path = ROOT/converted_apx_directory
     output_path.mkdir(parents=True, exist_ok=True)
-    print(f"Starting conversion from {input_path}/*.af to {output_path}/*.apx...")
-    
+
+    print(f"Starting conversion from {source_path}/*.af to {output_path}/*.apx...")
     file_count = 0
-    for af_file in input_path.glob("*.af"):
+    for af_file in source_path.glob("*.af"):
         apx_filename = af_file.stem + ".apx"
         apx_filepath = output_path/apx_filename
         with open(apx_filepath, 'w') as outfile:
@@ -87,12 +89,12 @@ def ConvertAfToApx():
 
 
 def CopyArgFiles():
-    print("\n--- Copying .arg files ---")
-    input_path = ROOT/source_directory
+    source_path = ROOT/source_directory
     output_path = ROOT/converted_apx_directory
+
     file_count = 0
-    for arg_file in input_path.glob("*.arg"):
-        shutil.copy(arg_file, output_path / arg_file.name)
+    for arg_file in source_path.glob("*.arg"):
+        shutil.copy(arg_file, output_path/arg_file.name)
         file_count += 1
     print(f"Copied {file_count} .arg files from {source_directory} to {converted_apx_directory}.")
 
@@ -102,11 +104,11 @@ def ConvertAfToIaf():
         print(f"ERROR: Generation script not found at {AF_TO_IAF_SCRIPT}")
         sys.exit(1)
 
-    input_path = ROOT/converted_apx_directory
+    source_path = ROOT/converted_apx_directory
     output_path = ROOT/output_directory
     output_path.mkdir(parents=True, exist_ok=True)
 
-    command = ["python3", AF_TO_IAF_SCRIPT, str(input_path), str(output_path)]
+    command = ["python3", AF_TO_IAF_SCRIPT, str(source_path), str(output_path)]
     RunCommand(command, "Generating IAF Instances")
 
 
@@ -114,6 +116,8 @@ def Cleanup():
     print("\n--- Cleaning up ---")
     if (ROOT/ARCHIVE).exists():
         os.remove(ROOT/ARCHIVE)
+    if (ROOT/source_directory_temp).exists():
+        shutil.rmtree(ROOT/source_directory_temp)
     if (ROOT/source_directory).exists():
         shutil.rmtree(ROOT/source_directory)
     if (ROOT/converted_apx_directory).exists():
@@ -122,9 +126,10 @@ def Cleanup():
 
 
 if __name__ == "__main__":
-    DownloadAndExtract()
-    ConvertAfToApx()
-    CopyArgFiles()
+    #DownloadAndExtract()
+    #SelectingMainFolder()
+    #ConvertAfToApx()
+    #CopyArgFiles()
     ConvertAfToIaf()
-    Cleanup()
+    #Cleanup()
     print("\n\nPROCESS COMPLETE")
