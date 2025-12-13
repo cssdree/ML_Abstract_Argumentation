@@ -62,6 +62,7 @@ def TestGNN(model):
     os.makedirs(f"{IAF_root}/GNN_labels/crashs", exist_ok=True)
     for apxfile in os.listdir(IAF_root):
         if apxfile.endswith(".apx"):
+            print(apxfile)
             filename = os.path.splitext(apxfile)[0]
             apxpath = f"{IAF_root}/{filename}.apx"
             argpath = f"{IAF_root}/{filename}.arg"
@@ -74,14 +75,14 @@ def TestGNN(model):
                 graph, num_nodes, certain_nodes, nodes_id, is_node_uncertain, def_args, inc_args, def_atts, inc_atts = CreateDGLGraphs(apxpath)
                 CreateCompletion(completion, def_args, def_atts, inc_args, inc_atts,f"cache/{filename}.apx")
                 if completion == "MIN":
-                    features_MIN = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MIN.apx", f"cache/{filename}_MIN.pt")
+                    features_MIN = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MIN.apx")
                     node_feats = torch.cat([is_node_uncertain.unsqueeze(1), features_MIN], dim=1)
                 elif completion == "MAX":
-                    features_MAX = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MAX.apx", f"cache/{filename}_MAX.pt")
+                    features_MAX = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MAX.apx")
                     node_feats = torch.cat([is_node_uncertain.unsqueeze(1), features_MAX], dim=1)
                 else:
-                    features_MAX = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MAX.apx", f"cache/{filename}_MAX.pt")
-                    features_MIN = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MIN.apx", f"cache/{filename}_MIN.pt")
+                    features_MAX = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MAX.apx")
+                    features_MIN = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MIN.apx")
                     node_feats = torch.cat([is_node_uncertain.unsqueeze(1), features_MAX, features_MIN], dim=1)
                 with torch.no_grad():
                     node_out, edge_out = model(graph, node_feats, graph.edata["is_uncertain"])
@@ -186,9 +187,10 @@ def DecisionProblemStatistics():
 
 
 if __name__ == "__main__":
-    TestTaeydennae()
+    #TestTaeydennae()
     model = EGAT(in_node, 1, 6, 6, 4, 1, heads=[5, 3, 3]).to(device)
-    model.load_state_dict(torch.load(model_root, map_location=device))
+    model.load_state_dict(torch.load(model_root, map_location=device, weights_only=True))
+    model.eval()
     TestGNN(model)
-    GlobalStatistics()
-    DecisionProblemStatistics()
+    #GlobalStatistics()
+    #DecisionProblemStatistics()
