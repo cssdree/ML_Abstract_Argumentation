@@ -9,10 +9,8 @@ import os
 
 ICCMA2023 = "https://zenodo.org/record/8348039/files/iccma2023_benchmarks.zip?download=1"
 ARCHIVE = "iccma2023_benchmarks.zip"
-
 ROOT = Path.cwd()
-AF_TO_APX_SCRIPT = Path('af_to_apx.py')
-AF_TO_IAF_SCRIPT = Path('af_to_iaf.py')
+AF_TO_APX_SCRIPT = Path('convert_af_to_apx.py')
 
 source_directory_temp = "benchmarks"
 source_directory = "main"
@@ -89,7 +87,7 @@ def CopyArgFiles():
     for arg_file in source_path.glob("*.arg"):
         shutil.copy(arg_file, output_path/arg_file.name)
         count += 1
-    print(f"Copied {count} .arg files from {source_directory} to {converted_apx_directory}.")
+    print(f"Copied {count} .arg files from {source_directory} to {converted_apx_directory}")
 
 
 def ConvertAfToIaf():

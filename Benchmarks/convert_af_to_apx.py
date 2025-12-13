@@ -1,7 +1,7 @@
 import sys
 
 if len(sys.argv) != 2:
-    print("ERROR: Syntax must be python3 af_to_apx.py file.af")
+    print("ERROR: Syntax must be python3 convert_af_to_apx.py file.af")
     sys.exit()
 
 filename = sys.argv[1]
