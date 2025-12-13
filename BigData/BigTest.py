@@ -15,7 +15,7 @@ in_node = 23 if completion == "MINMAX" else 12
 
 model_root = f"GNN/models/egat_f{in_node}_f1_{sem}_{completion}.pth"
 taeydennae_root = "./taeydennae_linux_x86-64"
-errors = set()
+errors = {"Large-result_b16_15_arg-inc"}
 
 
 def TestTaeydennae():
@@ -59,7 +59,6 @@ def TestTaeydennae():
 def TestGNN(model):
     os.makedirs("cache", exist_ok=True)
     os.makedirs(f"{IAF_root}/GNN_labels", exist_ok=True)
-    os.makedirs(f"{IAF_root}/GNN_labels/crashs", exist_ok=True)
     for apxfile in os.listdir(IAF_root):
         if apxfile.endswith(".apx"):
             print(apxfile)
@@ -67,8 +66,7 @@ def TestGNN(model):
             apxpath = f"{IAF_root}/{filename}.apx"
             argpath = f"{IAF_root}/{filename}.arg"
             labelpath = f"{IAF_root}/GNN_labels/{filename}_{sem}_{completion}.txt"
-            crashpath = f"{IAF_root}/GNN_labels/crashs/{filename}_crash.txt"
-            if not os.path.exists(labelpath) and not os.path.exists(crashpath) and filename not in errors:
+            if not os.path.exists(labelpath) and filename not in errors:
                 with open(argpath, "r", encoding="utf-8") as f:
                     arg = f.readline().strip()
                 start_time = time.time()
@@ -93,6 +91,10 @@ def TestGNN(model):
                 with open(labelpath, "w", encoding="utf-8") as f:
                     f.write(f"{prediction}\n")
                     f.write(f"{predictions_time}\n")
+                for var in ['graph', 'node_feats', 'node_out', 'edge_out', 'features_MIN', 'features_MAX']:
+                    if var in locals():
+                        del locals()[var]
+                torch.cuda.empty_cache()
 
 
 def GlobalStatistics():
