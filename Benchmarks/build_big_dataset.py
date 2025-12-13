@@ -1,5 +1,6 @@
 from pathlib import Path
 import urllib.request
+import numpy as np
 import subprocess
 import zipfile
 import shutil
@@ -8,27 +9,19 @@ import os
 
 ICCMA2023 = "https://zenodo.org/record/8348039/files/iccma2023_benchmarks.zip?download=1"
 ARCHIVE = "iccma2023_benchmarks.zip"
-ROOT = Path("Benchmarks")
 
-AF_TO_APX_SCRIPT = ROOT/'af_to_apx.py'
-AF_TO_IAF_SCRIPT = ROOT/'af_to_iaf.py'
+ROOT = Path.cwd()
+AF_TO_APX_SCRIPT = Path('af_to_apx.py')
+AF_TO_IAF_SCRIPT = Path('af_to_iaf.py')
 
 source_directory_temp = "benchmarks"
 source_directory = "main"
 converted_apx_directory = "ICCMA2023-apx"
 output_directory = "ICCMA2023-inc"
 
-
-def RunCommand(command, step_name):
-    print(f"\n--- {step_name} ---")
-    try:
-        subprocess.run(command, check=True, text=True, capture_output=True)
-        print("SUCCESS")
-    except subprocess.CalledProcessError as e:
-        print(f"ERROR: Step '{step_name}' failed.")
-        print(f"STDOUT: {e.stdout}")
-        print(f"STDERR: {e.stderr}")
-        sys.exit(1)
+seed = 2023
+np.random.seed(seed)
+probs = [0, 0.05, 0.1, 0.15, 0.2]
 
 
 def DownloadAndExtract():
@@ -78,38 +71,88 @@ def ConvertAfToApx():
     output_path.mkdir(parents=True, exist_ok=True)
 
     print(f"Starting conversion from {source_path}/*.af to {output_path}/*.apx...")
-    file_count = 0
+    count = 0
     for af_file in source_path.glob("*.af"):
-        apx_filename = af_file.stem + ".apx"
-        apx_filepath = output_path/apx_filename
+        apx_filepath = output_path/(af_file.stem+".apx")
         with open(apx_filepath, 'w') as outfile:
             subprocess.run(["python3", AF_TO_APX_SCRIPT, af_file], check=True, stdout=outfile, text=True)
-        file_count += 1
-    print(f"Converted {file_count} .af files to .apx")
+        count += 1
+    print(f"Converted {count} .af files to .apx")
 
 
 def CopyArgFiles():
     source_path = ROOT/source_directory
     output_path = ROOT/converted_apx_directory
 
-    file_count = 0
+    count = 0
     for arg_file in source_path.glob("*.arg"):
         shutil.copy(arg_file, output_path/arg_file.name)
-        file_count += 1
-    print(f"Copied {file_count} .arg files from {source_directory} to {converted_apx_directory}.")
+        count += 1
+    print(f"Copied {count} .arg files from {source_directory} to {converted_apx_directory}.")
 
 
 def ConvertAfToIaf():
-    if not AF_TO_IAF_SCRIPT.exists():
-        print(f"ERROR: Generation script not found at {AF_TO_IAF_SCRIPT}")
-        sys.exit(1)
-
     source_path = ROOT/converted_apx_directory
     output_path = ROOT/output_directory
     output_path.mkdir(parents=True, exist_ok=True)
 
-    command = ["python3", AF_TO_IAF_SCRIPT, str(source_path), str(output_path)]
-    RunCommand(command, "Generating IAF Instances")
+    af_count = 0
+    iaf_count = 0
+    for apx_file in source_path.glob("*.apx"):
+        af_count += 1
+        arg_filepath = source_path/(apx_file.stem+".af.arg")
+        q = arg_filepath.read_text().strip()
+        query = f"arg({q})."
+        lines = apx_file.read_text().splitlines()
+        args = [line for line in lines if line.startswith("arg")]
+        atts = [line for line in lines if line.startswith("att")]
+
+        for p in probs:
+            base_filename = apx_file.stem+"_"+(str(int(100*p)))
+            if p == 0:
+                out_filepath = output_path/(base_filename+"_inc.apx")
+                with open(out_filepath, 'w') as out:
+                    for arg in args:
+                        out.write(arg+"\n")
+                    for att in atts:
+                        out.write(att+"\n")
+                (out_filepath.with_suffix(".arg")).write_text(q)
+                iaf_count += 1
+                continue
+
+            def_args = []
+            def_atts = []
+            inc_args = []
+            inc_atts = []
+            for arg in args:
+                if np.random.uniform() < p and arg != query:
+                    inc_args.append(arg)
+                else:
+                    def_args.append(arg)
+            for att in atts:
+                if np.random.uniform() < p:
+                    inc_atts.append(att)
+                else:
+                    def_atts.append(att)
+            Export(output_path, base_filename, q, "inc", def_args, def_atts, inc_args, inc_atts)
+            Export(output_path, base_filename, q, "arg-inc", def_args, atts, inc_args, [])
+            Export(output_path, base_filename, q, "att-inc", args, def_atts, [], inc_atts)
+            iaf_count += 3
+    print(f"Generated {iaf_count} IAF instances from {af_count} AF")
+
+
+def Export(output_path, base_filename, q, inc_type, def_args, def_atts, inc_args, inc_atts):
+    out_filepath = output_path/(base_filename+"_"+inc_type+".apx")
+    with open(out_filepath, 'w') as out:
+        for arg in def_args:
+            out.write(arg+"\n")
+        for arg in inc_args:
+            out.write("?"+arg+"\n")
+        for att in def_atts:
+            out.write(att+"\n")
+        for att in inc_atts:
+            out.write("?"+att+"\n")
+    (out_filepath.with_suffix(".arg")).write_text(q)
 
 
 def Cleanup():
@@ -126,10 +169,10 @@ def Cleanup():
 
 
 if __name__ == "__main__":
-    #DownloadAndExtract()
-    #SelectingMainFolder()
-    #ConvertAfToApx()
-    #CopyArgFiles()
+    DownloadAndExtract()
+    SelectingMainFolder()
+    ConvertAfToApx()
+    CopyArgFiles()
     ConvertAfToIaf()
-    #Cleanup()
+    Cleanup()
     print("\n\nPROCESS COMPLETE")

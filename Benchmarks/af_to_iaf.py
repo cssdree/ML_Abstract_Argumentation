@@ -2,7 +2,6 @@ import os
 import sys
 import numpy as np
 
-
 original_instance_folder = sys.argv[1] #source folder for AFs
 generated_instance_folder = sys.argv[2] #output folder for IAFs
 probs = [0, 0.05, 0.1, 0.15, 0.2] #probabilities that an argument is uncertain
@@ -10,11 +9,12 @@ probs = [0, 0.05, 0.1, 0.15, 0.2] #probabilities that an argument is uncertain
 seed = 12122025
 np.random.seed(seed)
 
+
 count = 0
 for file in os.listdir(original_instance_folder):
 	count += 1
 	if file.endswith(".apx"):
-		arg_filename = file.replace(".apx", ".arg")
+		arg_filename = file.replace(".apx", ".af.arg")
 		arg_filepath = os.path.join(original_instance_folder, arg_filename)
 		try:
 			with open(arg_filepath, "r") as qin:
