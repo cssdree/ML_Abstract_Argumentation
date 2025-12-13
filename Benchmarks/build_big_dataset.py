@@ -70,9 +70,10 @@ def ConvertAfToApx():
     output_path = ROOT/converted_apx_directory
     output_path.mkdir(parents=True, exist_ok=True)
 
-    print(f"Starting conversion from {source_path}/*.af to {output_path}/*.apx...")
+    print(f"Starting conversion of .af files to .apx...")
     count = 0
     for af_file in source_path.glob("*.af"):
+        print(af_file)
         apx_filepath = output_path/(af_file.stem+".apx")
         with open(apx_filepath, 'w') as outfile:
             subprocess.run(["python3", AF_TO_APX_SCRIPT, af_file], check=True, stdout=outfile, text=True)
@@ -96,9 +97,11 @@ def ConvertAfToIaf():
     output_path = ROOT/output_directory
     output_path.mkdir(parents=True, exist_ok=True)
 
+    print(f"Starting generation of IAF instances from AF...")
     af_count = 0
     iaf_count = 0
     for apx_file in source_path.glob("*.apx"):
+        print(apx_file)
         af_count += 1
         arg_filepath = source_path/(apx_file.stem+".af.arg")
         q = arg_filepath.read_text().strip()
@@ -156,7 +159,7 @@ def Export(output_path, base_filename, q, inc_type, def_args, def_atts, inc_args
 
 
 def Cleanup():
-    print("\n--- Cleaning up ---")
+    print("Cleaning up")
     if (ROOT/ARCHIVE).exists():
         os.remove(ROOT/ARCHIVE)
     if (ROOT/source_directory_temp).exists():
@@ -175,4 +178,4 @@ if __name__ == "__main__":
     CopyArgFiles()
     ConvertAfToIaf()
     Cleanup()
-    print("\n\nPROCESS COMPLETE")
+    print(f"\n\nPROCESS COMPLETE: Big dataset located in '{output_directory}' directory")
