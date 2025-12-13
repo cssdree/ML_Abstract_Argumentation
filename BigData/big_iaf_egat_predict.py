@@ -1,6 +1,6 @@
 from BigData.BigDataset import CreateDGLGraphs
 from BigData.BigDataset import GetFeatures
-from Data.Graphs import CreateCompletions
+from Data.Graphs import CreateCompletion
 from GNN.Training import EGAT
 import torch
 import sys
@@ -13,12 +13,17 @@ def GetAcceptability(model, apxpath, problem, argID):
     model.eval()
     filename = os.path.splitext(os.path.basename(apxpath))[0]
     graph, num_nodes, certain_nodes, nodes_id, is_node_uncertain, def_args, inc_args, def_atts, inc_atts = CreateDGLGraphs(apxpath)
-    len_def_atts_MIN = CreateCompletions(def_args, def_atts, inc_args, inc_atts, f"cache/{filename}.apx")
-    if len_def_atts_MIN == 0:
-        return "ERROR : Zero attack in the minimal completion"
-    features_MAX = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MAX.apx", )
-    features_MIN = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MIN.apx", )
-    node_feats = torch.cat([is_node_uncertain.unsqueeze(1), features_MAX, features_MIN], dim=1)
+    CreateCompletion(def_args, def_atts, inc_args, inc_atts, f"cache/{filename}.apx")
+    if completion == "MIN":
+        features_MIN = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MIN.apx", f"cache/{filename}_MIN.pt")
+        node_feats = torch.cat([is_node_uncertain.unsqueeze(1), features_MIN], dim=1)
+    elif completion == "MAX":
+        features_MAX = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MAX.apx", f"cache/{filename}_MAX.pt")
+        node_feats = torch.cat([is_node_uncertain.unsqueeze(1), features_MAX], dim=1)
+    else:
+        features_MAX = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MAX.apx", f"cache/{filename}_MAX.pt")
+        features_MIN = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MIN.apx", f"cache/{filename}_MIN.pt")
+        node_feats = torch.cat([is_node_uncertain.unsqueeze(1), features_MAX, features_MIN], dim=1)
     with torch.no_grad():
         node_out, edge_out = model(graph, node_feats, graph.edata["is_uncertain"])
         predicted = (torch.sigmoid(node_out) > 0.5).tolist()
@@ -52,6 +57,8 @@ if __name__ == "__main__":
     argID = sys.argv[3]
     problem = task.split("-")[0]
     sem = task.split("-")[1]
-    model = EGAT(23, 1, 6, 6, 4, 1, heads=[5, 3, 3]).to(device)
-    model.load_state_dict(torch.load(f"GNN/models/egat_f23_f1_{sem}.pth", map_location=device))
+    completion = task.split("-")[2]
+    in_node = 23 if completion == "MINMAX" else 12
+    model = EGAT(in_node, 1, 6, 6, 4, 1, heads=[5, 3, 3]).to(device)
+    model.load_state_dict(torch.load(f"GNN/models/egat_f23_f1_{sem}_{completion}.pth", map_location=device, weight_only=True))
     print(GetAcceptability(model, apxpath, problem, argID))
