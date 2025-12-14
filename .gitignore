@@ -2,8 +2,6 @@
 .venv
 Data/IAF_TrainSet
 Data/IAF_TestSet
-BigData/A-inc
-BigData/B-inc
-BigData/ICCMA_2017
+Benchmarks/ICCMA2023-inc
 taeydennae_linux_x86-64
 af_reader_py-0.1.0-cp312-cp312-manylinux_2_34_x86_64.whl
