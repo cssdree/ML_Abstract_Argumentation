@@ -10,12 +10,9 @@ import time
 import ast
 import os
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 in_node = 23 if completion == "MINMAX" else 12
-
 model_root = f"GNN/models/egat_f{in_node}_f1_{sem}_{completion}.pth"
 taeydennae_root = "./taeydennae_linux_x86-64"
-errors = {"Large-result_b16_15_arg-inc"}
 
 
 def TestTaeydennae():
@@ -56,45 +53,65 @@ def TestTaeydennae():
                         f.write(f"{predictions_time}\n")
 
 
-def TestGNN(model):
+def TestGNN(model_cpu, model_cuda):
     os.makedirs("cache", exist_ok=True)
     os.makedirs(f"{IAF_root}/GNN_labels", exist_ok=True)
+    os.makedirs(f"{IAF_root}/GNN_labels/crash", exist_ok=True)
     for apxfile in os.listdir(IAF_root):
         if apxfile.endswith(".apx"):
-            print(apxfile)
             filename = os.path.splitext(apxfile)[0]
             apxpath = f"{IAF_root}/{filename}.apx"
             argpath = f"{IAF_root}/{filename}.arg"
             labelpath = f"{IAF_root}/GNN_labels/{filename}_{sem}_{completion}.txt"
-            if not os.path.exists(labelpath) and filename not in errors:
-                with open(argpath, "r", encoding="utf-8") as f:
-                    arg = f.readline().strip()
-                start_time = time.time()
-                graph, num_nodes, certain_nodes, nodes_id, is_node_uncertain, def_args, inc_args, def_atts, inc_atts = CreateDGLGraphs(apxpath)
-                CreateCompletion(completion, def_args, def_atts, inc_args, inc_atts,f"cache/{filename}.apx")
-                if completion == "MIN":
-                    features_MIN = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MIN.apx")
-                    node_feats = torch.cat([is_node_uncertain.unsqueeze(1), features_MIN], dim=1)
-                elif completion == "MAX":
-                    features_MAX = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MAX.apx")
-                    node_feats = torch.cat([is_node_uncertain.unsqueeze(1), features_MAX], dim=1)
-                else:
-                    features_MAX = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MAX.apx")
-                    features_MIN = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MIN.apx")
-                    node_feats = torch.cat([is_node_uncertain.unsqueeze(1), features_MAX, features_MIN], dim=1)
-                with torch.no_grad():
-                    node_out, edge_out = model(graph, node_feats, graph.edata["is_uncertain"])
-                    predictions = (torch.sigmoid(node_out) > 0.5).int().tolist()
-                    prediction = predictions[nodes_id[str(arg)]]
-                end_time = time.time()
-                predictions_time = end_time - start_time
-                with open(labelpath, "w", encoding="utf-8") as f:
-                    f.write(f"{prediction}\n")
-                    f.write(f"{predictions_time}\n")
-                for var in ['graph', 'node_feats', 'node_out', 'edge_out', 'features_MIN', 'features_MAX']:
-                    if var in locals():
-                        del locals()[var]
-                torch.cuda.empty_cache()
+            crashpath = f"{IAF_root}/GNN_labels/crash/{filename}_crash.txt"
+            if not os.path.exists(labelpath) and not os.path.exists(crashpath):
+                print(filename)
+                try:
+                    with open(argpath, "r", encoding="utf-8") as f:
+                        arg = f.readline().strip()
+                    start_time = time.time()
+                    graph, num_nodes, num_edges, certain_nodes, nodes_id, is_node_uncertain, def_args, inc_args, def_atts, inc_atts, local_device = CreateDGLGraphs(apxpath)
+                    CreateCompletion(completion, def_args, def_atts, inc_args, inc_atts,f"cache/{filename}.apx")
+                    if completion == "MIN":
+                        features_MIN = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MIN.apx", local_device)
+                        node_feats = torch.cat([is_node_uncertain.unsqueeze(1), features_MIN], dim=1)
+                    elif completion == "MAX":
+                        features_MAX = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MAX.apx", local_device)
+                        node_feats = torch.cat([is_node_uncertain.unsqueeze(1), features_MAX], dim=1)
+                    else:
+                        features_MAX = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MAX.apx", local_device)
+                        features_MIN = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MIN.apx", local_device)
+                        node_feats = torch.cat([is_node_uncertain.unsqueeze(1), features_MAX, features_MIN], dim=1)
+                    if local_device.type == "cuda" and model_cuda is not None:
+                        model = model_cuda
+                    else:
+                        model = model_cpu
+                    with torch.no_grad():
+                        node_out = model(graph, node_feats, graph.edata["is_uncertain"])
+                        predictions = (torch.sigmoid(node_out) > 0.5).int().tolist()
+                        prediction = predictions[nodes_id[str(arg)]]
+                    end_time = time.time()
+                    predictions_time = end_time - start_time
+                    with open(labelpath, "w", encoding="utf-8") as f:
+                        f.write(f"{prediction}\n")
+                        f.write(f"{predictions_time}\n")
+                except Exception as e:
+                    error_message = str(e)
+                    print(f"\n[CRASH] {filename} -> {error_message}\n")
+                    with open(crashpath, "w") as f:
+                        f.write(error_message)
+                    continue
+                finally:
+                    del graph, node_feats
+                    if 'node_out' in locals():
+                        del node_out
+                    if 'features_MIN' in locals():
+                        del features_MIN
+                    if 'features_MAX' in locals():
+                        del features_MAX
+                    if torch.cuda.is_available():
+                        torch.cuda.synchronize()
+                        torch.cuda.empty_cache()
 
 
 def GlobalStatistics():
@@ -190,9 +207,15 @@ def DecisionProblemStatistics():
 
 if __name__ == "__main__":
     #TestTaeydennae()
-    model = EGAT(in_node, 1, 6, 6, 4, 1, heads=[5, 3, 3]).to(device)
-    model.load_state_dict(torch.load(model_root, map_location=device, weights_only=True))
-    model.eval()
-    TestGNN(model)
+    model_cpu = EGAT(in_node, 1, 6, 6, 4, 1, heads=[5, 3, 3]).to(torch.device("cpu"))
+    model_cpu.load_state_dict(torch.load(model_root, map_location=torch.device("cpu"), weights_only=True))
+    model_cpu.eval()
+    if torch.cuda.is_available():
+        model_cuda = EGAT(in_node, 1, 6, 6, 4, 1, heads=[5, 3, 3]).to(torch.device("cuda"))
+        model_cuda.load_state_dict(torch.load(model_root, map_location=torch.device("cuda"), weights_only=True))
+        model_cuda.eval()
+    else:
+        model_cuda = None
+    TestGNN(model_cpu, model_cuda)
     #GlobalStatistics()
     #DecisionProblemStatistics()

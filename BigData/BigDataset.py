@@ -5,9 +5,8 @@ import torch
 import dgl
 import re
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def CreateDGLGraphs(apxpath, device=device):
+def CreateDGLGraphs(apxpath):
     num_nodes = GetNumNodes(apxpath)
     attackers = []
     attacked = []
@@ -53,19 +52,25 @@ def CreateDGLGraphs(apxpath, device=device):
                     attackers.append(nodes_id[src])
                     attacked.append(nodes_id[tgt])
                     is_edge_uncertain.append(0)
-        is_node_uncertain = torch.tensor(is_node_uncertain, dtype=torch.float32).to(device)
-        g = dgl.graph((torch.tensor(attackers), torch.tensor(attacked)), num_nodes=num_nodes).to(device)
+        num_edges = len(def_atts)+len(inc_atts)
+        if num_edges > 1000000:
+            local_device = torch.device("cpu")
+            print(f"number of edges = {num_edges} -> SWITCHING")
+        else:
+            local_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        is_node_uncertain = torch.tensor(is_node_uncertain, dtype=torch.float32, device=local_device)
+        g = dgl.graph((torch.tensor(attackers, device=local_device), torch.tensor(attacked, device=local_device)), num_nodes=num_nodes, device=local_device)
         g = dgl.add_self_loop(g)
-        g.edata["is_uncertain"] = torch.tensor(is_edge_uncertain+[0]*num_nodes, dtype=torch.float32).unsqueeze(1).to(device)
-    return g, num_nodes, certain_nodes, nodes_id, is_node_uncertain, def_args, inc_args, def_atts, inc_atts
+        g.edata["is_uncertain"] = torch.tensor(is_edge_uncertain+[0]*num_nodes, dtype=torch.float32, device=local_device).unsqueeze(1)
+    return g, num_nodes, num_edges, certain_nodes, nodes_id, is_node_uncertain, def_args, inc_args, def_atts, inc_atts, local_device
 
 
-def GetFeatures(num_nodes, certain_nodes, apxpath, device=device):
+def GetFeatures(num_nodes, certain_nodes, apxpath, device):
     raw_features = af_reader_py.compute_features(apxpath, 10000, 0.000001)
     if len(raw_features) != num_nodes:
         raw_features = FullFeatures(num_nodes, certain_nodes, raw_features)
     features = StandardScaler().fit_transform(raw_features)
-    features = torch.tensor(features, dtype=torch.float32).to(device)
+    features = torch.tensor(features, dtype=torch.float32, device=device)
     return features
 
 

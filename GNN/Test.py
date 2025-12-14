@@ -62,7 +62,7 @@ def TimeWithGNN(model):
                 features_MIN = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MIN.apx",f"cache/{filename}_MIN.pt")
                 node_feats = torch.cat([is_node_uncertain.unsqueeze(1), features_MAX, features_MIN], dim=1)
             with torch.no_grad():
-                node_out, edge_out = model(graph, node_feats, graph.edata["is_uncertain"])
+                node_out = model(graph, node_feats, graph.edata["is_uncertain"])
                 predictions = (torch.sigmoid(node_out) > 0.5).int().tolist()
             with open(predictionpath, "w", encoding="utf-8") as f:
                 f.write(f"{predictions}\n")

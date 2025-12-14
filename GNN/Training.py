@@ -42,8 +42,8 @@ class EGAT(nn.Module):
                 e = new_e.flatten(1)  #concatenation
             else:
                 n = new_n.mean(1)  #mean
-                e = new_e.mean(1)  #mean
-        return n, e
+                #e = new_e.mean(1)  #mean
+        return n
 
 
 if __name__ == "__main__":
@@ -71,7 +71,7 @@ if __name__ == "__main__":
             label = graph.ndata["label"].to(device)
             mask = graph.ndata["mask"].to(device).bool()
             optimizer.zero_grad()  #gradient reset before backpropagation
-            node_out, edge_out = model(graph, node_feats, edge_feats)
+            node_out = model(graph, node_feats, edge_feats)
             predicted = (torch.sigmoid(node_out))[mask] #scaling node_out to values between 0 and 1
             label = label[mask]
             loss_val = loss(predicted, label)
