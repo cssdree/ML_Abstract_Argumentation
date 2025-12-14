@@ -53,16 +53,16 @@ def CreateDGLGraphs(apxpath):
                     attacked.append(nodes_id[tgt])
                     is_edge_uncertain.append(0)
         num_edges = len(def_atts)+len(inc_atts)
-        if num_edges > 1000000:
+        if num_edges > 5000000:
             local_device = torch.device("cpu")
-            print(f"number of edges = {num_edges} -> SWITCHING")
+            print(f"number of edges = {num_edges} -> SWITCHING TO CPU")
         else:
             local_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         is_node_uncertain = torch.tensor(is_node_uncertain, dtype=torch.float32, device=local_device)
         g = dgl.graph((torch.tensor(attackers, device=local_device), torch.tensor(attacked, device=local_device)), num_nodes=num_nodes, device=local_device)
         g = dgl.add_self_loop(g)
         g.edata["is_uncertain"] = torch.tensor(is_edge_uncertain+[0]*num_nodes, dtype=torch.float32, device=local_device).unsqueeze(1)
-    return g, num_nodes, num_edges, certain_nodes, nodes_id, is_node_uncertain, def_args, inc_args, def_atts, inc_atts, local_device
+    return g, num_nodes, certain_nodes, nodes_id, is_node_uncertain, def_args, inc_args, def_atts, inc_atts, local_device
 
 
 def GetFeatures(num_nodes, certain_nodes, apxpath, device):

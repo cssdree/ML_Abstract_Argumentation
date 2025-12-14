@@ -70,7 +70,7 @@ def TestGNN(model_cpu, model_cuda):
                     with open(argpath, "r", encoding="utf-8") as f:
                         arg = f.readline().strip()
                     start_time = time.time()
-                    graph, num_nodes, num_edges, certain_nodes, nodes_id, is_node_uncertain, def_args, inc_args, def_atts, inc_atts, local_device = CreateDGLGraphs(apxpath)
+                    graph, num_nodes, certain_nodes, nodes_id, is_node_uncertain, def_args, inc_args, def_atts, inc_atts, local_device = CreateDGLGraphs(apxpath)
                     CreateCompletion(completion, def_args, def_atts, inc_args, inc_atts,f"cache/{filename}.apx")
                     if completion == "MIN":
                         features_MIN = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MIN.apx", local_device)

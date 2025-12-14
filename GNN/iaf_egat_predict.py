@@ -25,7 +25,7 @@ def GetAcceptability(model, apxpath, problem, argID):
         features_MIN = GetFeatures(num_nodes, certain_nodes, f"cache/{filename}_MIN.apx", f"cache/{filename}_MIN.pt")
         node_feats = torch.cat([is_node_uncertain.unsqueeze(1), features_MAX, features_MIN], dim=1)
     with torch.no_grad():
-        node_out, edge_out = model(graph, node_feats, graph.edata["is_uncertain"])
+        node_out = model(graph, node_feats, graph.edata["is_uncertain"])
         predictions = (torch.sigmoid(node_out) > 0.5).tolist()
     if problem == "PCA":
         if predictions[int(argID)][0] == True:
@@ -59,5 +59,5 @@ if __name__ == "__main__":
     completion = task.split("-")[2]
     in_node = 23 if completion == "MINMAX" else 12
     model = EGAT(in_node, 1, 6, 6, 4, 1, heads=[5, 3, 3]).to(device)
-    model.load_state_dict(torch.load(f"GNN/models/egat_f23_f1_{sem}_{completion}.pth", map_location=device, weights_only=True))
+    model.load_state_dict(torch.load(f"GNN/models/egat_f{in_node}_f1_{sem}_{completion}.pth", map_location=device, weights_only=True))
     print(GetAcceptability(model, apxpath, problem, argID))
