@@ -17,14 +17,15 @@ taeydennae_root = "./taeydennae_linux_x86-64"
 
 def TestTaeydennae():
     os.makedirs(f"{IAF_root}/taeydennae_labels", exist_ok=True)
-    os.makedirs(f"{IAF_root}/taeydennae_labels/timeouts-{sem}", exist_ok=True)
+    os.makedirs(f"{IAF_root}/taeydennae_labels/{sem}", exist_ok=True)
+    os.makedirs(f"{IAF_root}/taeydennae_labels/{sem}-timeouts", exist_ok=True)
     for apxfile in os.listdir(IAF_root):
         if apxfile.endswith(".apx"):
             filename = os.path.splitext(apxfile)[0]
             apxpath = f"{IAF_root}/{filename}.apx"
             argpath = f"{IAF_root}/{filename}.arg"
-            labelpath = f"{IAF_root}/taeydennae_labels/{filename}_{sem}.txt"
-            timeoutpath = f"{IAF_root}/taeydennae_labels/timeouts-{sem}/{filename}_timeout.txt"
+            labelpath = f"{IAF_root}/taeydennae_labels/{sem}/{filename}_{sem}.txt"
+            timeoutpath = f"{IAF_root}/taeydennae_labels/{sem}-timeouts/{filename}_timeout.txt"
             if not os.path.exists(labelpath) and not os.path.exists(timeoutpath):
                 predictions = []
                 timeout_occurred = False
@@ -39,7 +40,7 @@ def TestTaeydennae():
                         elif prediction.returncode == 0 and "NO" in prediction.stdout:
                             predictions.append(0)
                         else:
-                            print(f"Error : {filename}, task={task}, arg={arg}, prediction={prediction.stdout}")
+                            print(f"[ERROR] {filename}, task={task}, arg={arg}, prediction={prediction.stdout}")
                             predictions.append(2)
                     except subprocess.TimeoutExpired:
                         open(timeoutpath, "w").close()
@@ -56,15 +57,14 @@ def TestTaeydennae():
 def TestGNN(model_cpu, model_cuda):
     os.makedirs("cache", exist_ok=True)
     os.makedirs(f"{IAF_root}/GNN_labels", exist_ok=True)
-    os.makedirs(f"{IAF_root}/GNN_labels/crash", exist_ok=True)
+    os.makedirs(f"{IAF_root}/GNN_labels/{sem}-{completion}", exist_ok=True)
     for apxfile in os.listdir(IAF_root):
-        if apxfile.endswith(".apx"):
+        if apxfile.endswith(".apx") and not apxfile.startswith("Large-result") and not apxfile.startswith("crusti_g2io_350_0.5_255_40"):
             filename = os.path.splitext(apxfile)[0]
             apxpath = f"{IAF_root}/{filename}.apx"
             argpath = f"{IAF_root}/{filename}.arg"
-            labelpath = f"{IAF_root}/GNN_labels/{filename}_{sem}_{completion}.txt"
-            crashpath = f"{IAF_root}/GNN_labels/crash/{filename}_crash.txt"
-            if not os.path.exists(labelpath) and not os.path.exists(crashpath):
+            labelpath = f"{IAF_root}/GNN_labels/{sem}-{completion}/{filename}_{sem}_{completion}.txt"
+            if not os.path.exists(labelpath):
                 print(filename)
                 try:
                     with open(argpath, "r", encoding="utf-8") as f:
@@ -96,10 +96,7 @@ def TestGNN(model_cpu, model_cuda):
                         f.write(f"{prediction}\n")
                         f.write(f"{predictions_time}\n")
                 except Exception as e:
-                    error_message = str(e)
-                    print(f"\n[CRASH] {filename} -> {error_message}\n")
-                    with open(crashpath, "w") as f:
-                        f.write(error_message)
+                    print(f"\n[CRASH] {filename} --> {str(e)}\n")
                     continue
                 finally:
                     del graph, node_feats
@@ -124,33 +121,32 @@ def GlobalStatistics():
     taeydennae_median = []
     GNN_median = []
     graphs_total = sum(1 for f in os.listdir(IAF_root) if f.endswith(".apx"))
-    graphs_predicted_taey = graphs_total - sum(1 for f in os.listdir(f"{IAF_root}/taeydennae_labels/timeouts-{sem}" ) if f.endswith("_timeout.txt"))
+    graphs_predicted_taey = graphs_total - sum(1 for f in os.listdir(f"{IAF_root}/taeydennae_labels/{sem}-timeouts" ) if f.endswith("_timeout.txt"))
     graphs_predicted_gnn = 0
-    for txtfile in os.listdir(f"{IAF_root}/GNN_labels"):
-        if txtfile.endswith(f"{sem}_{completion}.txt"):
-            filename = "_".join(os.path.splitext(txtfile)[0].split("_")[:-2])
-            graphs_predicted_gnn += 1
-            with open(f"{IAF_root}/GNN_labels/{filename}_{sem}_{completion}.txt", "r", encoding="utf-8") as f:
-                GNN_prediction = ast.literal_eval(f.readline().strip())
-                GNN_prediction_time = float(f.readline().strip())
-                GNN_median.append(GNN_prediction_time)
-            if os.path.exists(f"{IAF_root}/taeydennae_labels/timeouts-{sem}/{filename}_timeout.txt"):
-                taeydennae_prediction_time = 120
+    for txtfile in os.listdir(f"{IAF_root}/GNN_labels/{sem}-{completion}"):
+        filename = "_".join(os.path.splitext(txtfile)[0].split("_")[:-2])
+        graphs_predicted_gnn += 1
+        with open(f"{IAF_root}/GNN_labels/{sem}-{completion}/{filename}_{sem}_{completion}.txt", "r", encoding="utf-8") as f:
+            GNN_prediction = ast.literal_eval(f.readline().strip())
+            GNN_prediction_time = float(f.readline().strip())
+            GNN_median.append(GNN_prediction_time)
+        if os.path.exists(f"{IAF_root}/taeydennae_labels/{sem}-timeouts/{filename}_timeout.txt"):
+            taeydennae_prediction_time = 120
+            taeydennae_median.append(taeydennae_prediction_time)
+        else :
+            with open(f"{IAF_root}/taeydennae_labels/{sem}/{filename}_{sem}.txt", "r", encoding="utf-8") as f:
+                taeydennae_prediction = ast.literal_eval(f.readline().strip())
+                taeydennae_prediction_time = float(f.readline().strip())
                 taeydennae_median.append(taeydennae_prediction_time)
-            else :
-                with open(f"{IAF_root}/taeydennae_labels/{filename}_{sem}.txt", "r", encoding="utf-8") as f:
-                    taeydennae_prediction = ast.literal_eval(f.readline().strip())
-                    taeydennae_prediction_time = float(f.readline().strip())
-                    taeydennae_median.append(taeydennae_prediction_time)
-                for gnn_val, taey_val in zip(GNN_prediction, taeydennae_prediction):
-                    if gnn_val == taey_val == 1:
-                        VP += 1
-                    elif gnn_val == taey_val == 0:
-                        VN += 1
-                    elif gnn_val == 1 and taey_val == 0:
-                        FP += 1
-                    elif gnn_val == 0 and taey_val == 1:
-                        FN += 1
+            for gnn_val, taey_val in zip(GNN_prediction, taeydennae_prediction):
+                if gnn_val == taey_val == 1:
+                    VP += 1
+                elif gnn_val == taey_val == 0:
+                    VN += 1
+                elif gnn_val == 1 and taey_val == 0:
+                    FP += 1
+                elif gnn_val == 0 and taey_val == 1:
+                    FN += 1
             taeydennae_time += taeydennae_prediction_time
             GNN_time += GNN_prediction_time
     print(f"Graphs predicted by Taeydennae (less than 60 sec) : {graphs_predicted_taey}/{graphs_total}")
@@ -176,26 +172,25 @@ def DecisionProblemStatistics():
     PSA = {"name": "PSA", "VP": 0, "VN": 0, "FP": 0, "FN":0}
     NSA = {"name": "NSA", "VP": 0, "VN": 0, "FP": 0, "FN":0}
     problems = [PCA, NCA, PSA, NSA]
-    for txtfile in os.listdir(f"{IAF_root}/GNN_labels"):
-        if txtfile.endswith(f"{sem}_{completion}.txt"):
-            filename = "_".join(os.path.splitext(txtfile)[0].split("_")[:-2])
-            if not os.path.exists(f"{IAF_root}/taeydennae_labels/timeouts-{sem}/{filename}_timeout.txt"):
-                with open(f"{IAF_root}/taeydennae_labels/{filename}_{sem}.txt", "r", encoding="utf-8") as f:
-                    taeydennae_prediction = ast.literal_eval(f.readline().strip())
-                with open(f"{IAF_root}/GNN_labels/{filename}_{sem}_{completion}.txt", "r", encoding="utf-8") as f:
-                    GNN_prediction = ast.literal_eval(f.readline().strip())
-                problem_id = 0
-                for gnn_val, taey_val in zip(GNN_prediction, taeydennae_prediction):
-                    problem_dict = problems[problem_id]
-                    if gnn_val == taey_val == 1:
-                        problem_dict["VP"] += 1
-                    elif gnn_val == taey_val == 0:
-                        problem_dict["VN"] += 1
-                    elif gnn_val == 1 and taey_val == 0:
-                        problem_dict["FP"] += 1
-                    elif gnn_val == 0 and taey_val == 1:
-                        problem_dict["FN"] += 1
-                    problem_id += 1
+    for txtfile in os.listdir(f"{IAF_root}/GNN_labels/{sem}-{completion}"):
+        filename = "_".join(os.path.splitext(txtfile)[0].split("_")[:-2])
+        if not os.path.exists(f"{IAF_root}/taeydennae_labels/{sem}-timeouts/{filename}_timeout.txt"):
+            with open(f"{IAF_root}/taeydennae_labels/{sem}/{filename}_{sem}.txt", "r", encoding="utf-8") as f:
+                taeydennae_prediction = ast.literal_eval(f.readline().strip())
+            with open(f"{IAF_root}/GNN_labels/{sem}-{completion}/{filename}_{sem}_{completion}.txt", "r", encoding="utf-8") as f:
+                GNN_prediction = ast.literal_eval(f.readline().strip())
+            problem_id = 0
+            for gnn_val, taey_val in zip(GNN_prediction, taeydennae_prediction):
+                problem_dict = problems[problem_id]
+                if gnn_val == taey_val == 1:
+                    problem_dict["VP"] += 1
+                elif gnn_val == taey_val == 0:
+                    problem_dict["VN"] += 1
+                elif gnn_val == 1 and taey_val == 0:
+                    problem_dict["FP"] += 1
+                elif gnn_val == 0 and taey_val == 1:
+                    problem_dict["FN"] += 1
+                problem_id += 1
     for problem in problems:
         problem_name = problem["name"]
         print(f"{problem_name} Accuracy :", (problem["VP"]+problem["VN"])/(problem["VP"]+problem["VN"]+problem["FP"]+problem["FN"]))
