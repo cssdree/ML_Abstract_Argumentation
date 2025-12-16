@@ -201,7 +201,7 @@ def DecisionProblemStatistics():
 
 
 if __name__ == "__main__":
-    #TestTaeydennae()
+    TestTaeydennae()
     model_cpu = EGAT(in_node, 1, 6, 6, 4, 1, heads=[5, 3, 3]).to(torch.device("cpu"))
     model_cpu.load_state_dict(torch.load(model_root, map_location=torch.device("cpu"), weights_only=True))
     model_cpu.eval()
@@ -211,6 +211,6 @@ if __name__ == "__main__":
         model_cuda.eval()
     else:
         model_cuda = None
-    TestGNN(model_cpu, model_cuda)
+    #TestGNN(model_cpu, model_cuda)
     #GlobalStatistics()
     #DecisionProblemStatistics()
