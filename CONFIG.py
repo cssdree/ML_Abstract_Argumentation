@@ -6,6 +6,6 @@ sem = "ST"
 #sem = "PR"
 #sem = "GR"
 
-completion = "MINMAX"
-#completion = "MIN"
+#completion = "MINMAX"
+completion = "MIN"
 #completion = "MAX"

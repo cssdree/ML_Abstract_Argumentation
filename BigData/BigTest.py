@@ -147,8 +147,8 @@ def GlobalStatistics():
                     FP += 1
                 elif gnn_val == 0 and taey_val == 1:
                     FN += 1
-            taeydennae_time += taeydennae_prediction_time
-            GNN_time += GNN_prediction_time
+        taeydennae_time += taeydennae_prediction_time
+        GNN_time += GNN_prediction_time
     print(f"Graphs predicted by Taeydennae (less than 60 sec) : {graphs_predicted_taey}/{graphs_total}")
     print(f"Graphs predicted by the GNN (no crash or error) : {graphs_predicted_gnn}/{graphs_total}")
     print("")
@@ -201,7 +201,7 @@ def DecisionProblemStatistics():
 
 
 if __name__ == "__main__":
-    TestTaeydennae()
+    #TestTaeydennae()
     model_cpu = EGAT(in_node, 1, 6, 6, 4, 1, heads=[5, 3, 3]).to(torch.device("cpu"))
     model_cpu.load_state_dict(torch.load(model_root, map_location=torch.device("cpu"), weights_only=True))
     model_cpu.eval()
@@ -212,5 +212,5 @@ if __name__ == "__main__":
     else:
         model_cuda = None
     #TestGNN(model_cpu, model_cuda)
-    #GlobalStatistics()
-    #DecisionProblemStatistics()
+    GlobalStatistics()
+    DecisionProblemStatistics()
