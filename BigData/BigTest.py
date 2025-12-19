@@ -211,6 +211,6 @@ if __name__ == "__main__":
         model_cuda.eval()
     else:
         model_cuda = None
-    #TestGNN(model_cpu, model_cuda)
-    GlobalStatistics()
-    DecisionProblemStatistics()
+    TestGNN(model_cpu, model_cuda)
+    #GlobalStatistics()
+    #DecisionProblemStatistics()
