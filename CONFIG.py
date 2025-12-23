@@ -7,5 +7,5 @@ sem = "PR"
 #sem = "GR"
 
 #completion = "MINMAX"
-completion = "MIN"
-#completion = "MAX"
+#completion = "MIN"
+completion = "MAX"
