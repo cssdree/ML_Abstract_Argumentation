@@ -2,8 +2,8 @@
 This project aims to develop neural models capable of determining the acceptability of arguments within Incomplete Argumentation Frameworks (IAFs). The models are first trained and tested on a dataset generated as part of this project, and then evaluated on the benchmarks provided by ICCMA 2023.
 
 ## Installation
-1. Install the **Taeydennae** solver from the following repository : [https://bitbucket.org/andreasniskanen/taeydennae/src/master/](https://bitbucket.org/andreasniskanen/taeydennae/src/master/)
-2. Install the **af_reader_py** module from the following repository : [https://github.com/Paulo-21/AF-GCN-GAT_wGS](https://github.com/Paulo-21/AF-GCN-GAT_wGS)
+1. Install the **Taeydennae** solver from this repository : [https://bitbucket.org/andreasniskanen/taeydennae/src/master/](https://bitbucket.org/andreasniskanen/taeydennae/src/master/)
+2. Install the **af_reader_py** module from this repository : [https://github.com/Paulo-21/AF-GCN-GAT_wGS](https://github.com/Paulo-21/AF-GCN-GAT_wGS)
 3. Install the dependencies according to your hardware configuration :
 ```bash
 pip install -r requirements-cpu.txt
@@ -20,15 +20,16 @@ python3 Benchmarks/build_ICCMA2023_dataset.py
 Before running any script, ensure the desired settings are uncommented in the `CONFIG.py` file. Three variables can be configured :
 #### IAF_root variable
 This variable specifies which dataset to access.
-- For the small dataset, set it to `Data/IAF_TrainSet` for the training set or `Data/IAF_TestSet` for the test set.
-- For the ICCMA 2023 dataset, set it to `Benchmarks/ICCMA2023-inc`.
+- `Data/IAF_TrainSet` for the training set of the small dataset
+- `Data/IAF_TestSet` for the test set of the small dataset
+- `Benchmarks/ICCMA2023-inc` for the ICCMA 2023 dataset
 #### Sem variable
 This variable specifies the semantics to use. You can choose among the following three options : ST for stable semantics, PR for preferred semantics or GR for grounded semantics.
 #### Completion variable
 This variable defines how the model handles completions during the training and prediction phases.
-- MINMAX to use both minimum and maximum completions
-- MIN to use only the minimum completion
-- MAX to use only the maximum completion
+- `MINMAX` to use both minimum and maximum completions
+- `MIN` to use only the minimum completion
+- `MAX` to use only the maximum completion
 
 ## Usage
 
