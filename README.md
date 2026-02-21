@@ -67,7 +67,7 @@ python3 -m BigData.big_iaf_egat_predict filepath problem-sem-completion argument
 ```
 To test the speed and performance of a model on the ICCMA 2023 dataset:
 ```bash
-python3 -m BigData.Test
+python3 -m BigData.BigTest
 ```
 
 ## Filenames

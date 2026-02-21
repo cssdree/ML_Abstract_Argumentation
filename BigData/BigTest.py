@@ -111,6 +111,12 @@ def TestGNN(model_cpu, model_cuda):
                         torch.cuda.empty_cache()
 
 
+def safe_metric(numerator, denominator):
+    if denominator == 0:
+        return "X"
+    return numerator/denominator
+
+
 def GlobalStatistics():
     VP = 0  #Vrai Positif : args acceptés qu'on a classé comme accepctés
     VN = 0  #Vrai Négatif : args rejetés qu'on a classé comme rejetés
@@ -159,10 +165,14 @@ def GlobalStatistics():
     print("GNN median time :", statistics.median(GNN_median))
     print("GNN cumulative time :", GNN_time)
     print("")
-    print("Accuracy :",(VP+VN)/(VP+VN+FP+FN))
-    print("Precision :",VP/(VP+FP))
-    print("Recall :",VP/(VP+FN))
-    print("F1-score :",(2*VP)/(2*VP+FP+FN))
+    accuracy = safe_metric(VP+VN, VP+VN+FP+FN)
+    precision = safe_metric(VP, VP+FP)
+    recall = safe_metric(VP, VP+FN)
+    f1 = safe_metric(2*VP, 2*VP+FP+FN)
+    print("Accuracy :", accuracy)
+    print("Precision :", precision)
+    print("Recall :", recall)
+    print("F1-score :", f1)
     print("")
 
 
@@ -193,10 +203,14 @@ def DecisionProblemStatistics():
                 problem_id += 1
     for problem in problems:
         problem_name = problem["name"]
-        print(f"{problem_name} Accuracy :", (problem["VP"]+problem["VN"])/(problem["VP"]+problem["VN"]+problem["FP"]+problem["FN"]))
-        print(f"{problem_name} Precision :", problem["VP"]/(problem["VP"]+problem["FP"]))
-        print(f"{problem_name} Recall :", problem["VP"]/(problem["VP"]+problem["FN"]))
-        print(f"{problem_name} F1-score :", (2*problem["VP"])/(2*problem["VP"]+problem["FP"]+problem["FN"]))
+        accuracy = safe_metric(problem["VP"]+problem["VN"], problem["VP"]+problem["VN"]+problem["FP"]+problem["FN"])
+        precision = safe_metric(problem["VP"], problem["VP"]+problem["FP"])
+        recall = safe_metric(problem["VP"], problem["VP"]+problem["FN"])
+        f1 = safe_metric(2*problem["VP"], 2*problem["VP"]+problem["FP"]+problem["FN"])
+        print(f"{problem_name} Accuracy :", accuracy)
+        print(f"{problem_name} Precision :", precision)
+        print(f"{problem_name} Recall :", recall)
+        print(f"{problem_name} F1-score :", f1)
         print("")
 
 
